@@ -1,0 +1,8 @@
+-e .
+
+loguru
+mypy
+pandas-stubs
+ruff
+types-requests
+types-tqdm

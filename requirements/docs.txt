@@ -1,0 +1,10 @@
+-e .
+
+griffe-pydantic
+loguru
+mkdocs
+mkdocs-gen-files
+mkdocs-jupyter
+mkdocs-material
+mkdocstrings[python]
+tabulate

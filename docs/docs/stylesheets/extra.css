@@ -1,0 +1,18 @@
+/* hide jupyter notebooks input/output numbers */
+.jp-InputPrompt {
+    display: none !important;
+  }
+  
+  .jp-OutputPrompt {
+    display: none !important;
+  }
+
+  /* Indentation. */
+div.doc-contents:not(.first) {
+  padding-left: 25px;
+  border-left: .05rem solid var(--md-typeset-table-color);
+}
+
+[data-md-color-scheme="sfa"] {
+  --md-primary-fg-color:        #9c246c;
+}

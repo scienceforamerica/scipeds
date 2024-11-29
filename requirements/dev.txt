@@ -1,0 +1,11 @@
+-e .
+
+-r lint.txt
+-r docs.txt
+
+build
+loguru
+pip-tools
+pytest
+requests
+twine

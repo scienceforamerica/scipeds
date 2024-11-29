@@ -1,0 +1,6 @@
+cloudpathlib[gs]
+duckdb
+pandas
+requests
+tqdm
+typer
