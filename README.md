@@ -75,7 +75,7 @@ For more detailed usage, see the [Usage page](usage.ipynb) or the [engine API Re
 
 `scipeds` is _not_ a tool for working with raw IPEDS data. For that, you should download data directly from [IPEDS](https://nces.ed.gov/ipeds/). 
 
-We also provide functionality to reproduce our pre-processing of the IPEDS data. To recreate the pre-processed database, you can clone this repository, download the raw data, and re-run the pipeline code in `pipeline/`. Decisions about how to convert / crosswalk data across different years and handle other edge cases such as missing data are contained in the pipeline code.
+Full `scipeds` documentation can be found at [this link](https://scipeds.onrender.com/), and the source code is avilable on [GitHub](https://github.com/scienceforamerica/scipeds).
 
 #### Currently supported IPEDS surveys
 
@@ -83,6 +83,10 @@ We also provide functionality to reproduce our pre-processing of the IPEDS data.
 
 - IPEDS Completions by program (6-digit CIP code), award level, race/ethnicity, and gender from 1995-2023
 - IPEDS Institutional Characteristics Directory Information from 2011-2023
+
+#### Completions data preprocessing
+
+We provide functionality to reproduce our pre-processing of the IPEDS data. To recreate the pre-processed database, you can clone the `scipeds` [repository](https://github.com/scienceforamerica/scipeds), download the raw data, and re-run the pipeline code in `pipeline/`. Decisions about how to convert / crosswalk data across different years and handle other edge cases such as missing data are contained in the pipeline code.
 
 ### Why does `scipeds` exist?
 
