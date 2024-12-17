@@ -2,6 +2,8 @@
 
 A Python package for working with [IPEDS](https://nces.ed.gov/ipeds/) [data](https://nces.ed.gov/ipeds/datacenter/DataFiles.aspx).
 
+Read the full documentation [here](https://scipeds.onrender.com/).
+
 <a target="_blank" href="https://cookiecutter-data-science.drivendata.org/">
     <img src="https://img.shields.io/badge/CCDS-Project%20template-328F97?logo=cookiecutter" />
 </a>
