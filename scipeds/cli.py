@@ -39,6 +39,7 @@ def download_db(
         print(
             f"Database already downloaded to {output_path}. To re-download and "
             "overwrite the existing file, re-run with `overwrite` set to `True`"
+            "(from within Python) or add --overwrite to your CLI command."
         )
         return
 
