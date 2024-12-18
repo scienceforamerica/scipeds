@@ -4,11 +4,12 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "scipeds"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
   "cloudpathlib[gs]",
   "duckdb",
   "lxml",
+  "numpy",
   "openpyxl",
   "pandas",
   "platformdirs",
