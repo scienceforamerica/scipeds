@@ -54,7 +54,8 @@ class IPEDSQueryEngine:
             List[str]: A list of all available tables
         """
         tables = self.get_df_from_query("SHOW TABLES").iloc[:, 0].values.tolist()
-        return tables
+        # Temporary numpy typing fix - see https://github.com/numpy/numpy/issues/27944
+        return tables  # type: ignore[return-value]
 
     def get_cip_table(self) -> pd.DataFrame:
         """Get a table of every unique 2020 CIP Code
