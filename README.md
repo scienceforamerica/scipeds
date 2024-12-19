@@ -65,7 +65,7 @@ df = engine.get_df_from_query(f"""
 """)
 ```
 
-For more detailed usage, see the [Usage page](usage.ipynb) or the [engine API Reference](data.md).
+For more detailed usage, see the [Usage page](https://scipeds.onrender.com/usage) or the [engine API Reference](https://scipeds.onrender.com/data).
 
 ## About `scipeds`
 
