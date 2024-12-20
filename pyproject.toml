@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "scipeds"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
   "cloudpathlib[gs]",
   "duckdb",
@@ -37,6 +37,12 @@ classifiers = [
   "Topic :: Education",
 ]
 requires-python = ">=3.10"
+
+[project.urls]
+Documentation = "https://scipeds.onrender.com/"
+Repository = "https://github.com/scienceforamerica/scipeds.git"
+Issues = "https://github.com/scienceforamerica/scipeds/issues"
+Changelog = "https://github.com/scienceforamerica/scipeds/blob/main/HISTORY.md"
 
 [project.scripts]
 scipeds = "scipeds.cli:app"
