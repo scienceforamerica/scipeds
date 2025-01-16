@@ -14,7 +14,7 @@ Read the full documentation [here](https://scipeds.onrender.com/).
 
 ```bash
 # with pip
-pip install ipeds
+pip install scipeds
 ```
 
 ### Download the pre-processed database
