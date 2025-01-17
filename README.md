@@ -49,8 +49,10 @@ Use a pre-baked query:
 ```python
 gender_df = engine.field_totals_by_grouping(
     grouping="gender", 
-    taxonomy=FieldTaxonomy.ncses_field_group
+    taxonomy=FieldTaxonomy.ncses_field_group,
+    query_filters=QueryFilters()
 )
+gender_df.head()
 ```
 
 or write your own using [duckdb SQL syntax](https://duckdb.org/docs/sql/introduction.html):
@@ -63,6 +65,7 @@ df = engine.get_df_from_query(f"""
     FROM {COMPLETIONS_TABLE}
     LIMIT 10;
 """)
+df.head()
 ```
 
 For more detailed usage, see the [Usage page](https://scipeds.onrender.com/usage) or the [engine API Reference](https://scipeds.onrender.com/data).
