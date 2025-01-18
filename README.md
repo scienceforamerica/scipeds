@@ -10,12 +10,24 @@ Read the full documentation [here](https://scipeds.onrender.com/).
 
 ## Quickstart
 
+### Use Colab (No Installation Required)
+Click the link below to launch a pre-configured Google Colab notebook for `scipeds`:
+
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1ZlLL6m-9SNWEBmY5o09RtKQB4EBjq20n?usp=sharing)
+
+### Steps:
+1. Open the Colab notebook using the link above.
+2. Follow the instructions in the notebook to explore and use `scipeds` in a cloud environment.
+
+
 ### Install `scipeds`
 
 ```bash
 # with pip
 pip install scipeds
 ```
+
+
 
 ### Download the pre-processed database
 
