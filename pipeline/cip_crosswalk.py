@@ -33,7 +33,7 @@ class CIPCodeCrosswalk:
         self.crosswalk: Dict[Tuple[int, int], dict] = {}
         self._load_2010_to_2020_crosswalk()
         self._load_2000_to_2010_crosswalk()
-        self._load_1990_to_2000_crosswalk()
+        self._load_1985_to_2000_crosswalk()
 
         self.year_ranges = sorted(list(self.crosswalk.keys()), key=lambda x: x[0])
         self.min_year = min(yr[0] for yr in self.year_ranges)
@@ -88,9 +88,9 @@ class CIPCodeCrosswalk:
         mappers = {"cip_map": cip_map, "title_map": title_map}
         self.crosswalk[year_range] = mappers
 
-    def _load_1990_to_2000_crosswalk(self):
+    def _load_1985_to_2000_crosswalk(self):
         """Load and clean/process the CIP1990 -> CIP2000 crosswalk"""
-        year_range = (1990, 1999)
+        year_range = (1984, 1999) # TODO: check that using the 1985->2000 crosswalk is fine for 1984 as well
         file = self.crosswalk_dir / "1985-1999" / "CIP.XLS"
         sheet_name = "Crosswalk_CIP90toCIP2K"
         df = pd.read_excel(file, sheet_name=sheet_name, dtype=str)

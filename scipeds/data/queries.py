@@ -52,6 +52,7 @@ class QueryFilters(BaseModel):
 
     race_ethns: List[RaceEthn] = list(RaceEthn)
     """ Which race/ethnicity groups to include (default: all)"""
+    # TODO: will adding "Total" to this break things or not?
 
     award_levels: List[AwardLevel] = list(AwardLevel)
     """Which degrees / award levels to include (default: all)"""

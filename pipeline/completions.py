@@ -11,6 +11,11 @@ from scipeds import constants
 from scipeds.data.enums import AwardLevel, Gender, NCSESSciGroup, RaceEthn
 from scipeds.utils import clean_name
 
+PRE_1995_GENDERONLY_CRACE_CODES = {
+    "crace15": (RaceEthn.total.value, Gender.men.value),
+    "crace16": (RaceEthn.total.value, Gender.women.value)
+}
+
 PRE_2010_CRACE_CODES = {
     "crace01": (RaceEthn.nonres.value, Gender.men.value),
     "crace02": (RaceEthn.nonres.value, Gender.women.value),
@@ -90,8 +95,7 @@ AWARD_LEVEL_CODES = {
 }
 
 INDEX_COLS = ["unitid", "cipcode", "awlevel", "majornum"]
-ALL_CRACE_CODES = PRE_2010_CRACE_CODES | INTERIM_CRACE_CODES | POST_2010_CRACE_CODES
-
+ALL_CRACE_CODES = PRE_2010_CRACE_CODES | INTERIM_CRACE_CODES | POST_2010_CRACE_CODES | PRE_1995_GENDERONLY_CRACE_CODES
 
 class IPEDSCompletionsReader:
     """Class for reading, cleaning, tidying, and transforming historical IPEDS completions data
@@ -176,7 +180,10 @@ class IPEDSCompletionsReader:
         if any(col.startswith("dv") for col in df.columns):
             col_map = INTERIM_CRACE_CODES
         elif any(col.startswith("crace") for col in df.columns):
-            col_map = PRE_2010_CRACE_CODES
+            if len(df.columns) == 2:
+                col_map = PRE_1995_GENDERONLY_CRACE_CODES
+            else:
+                col_map = PRE_2010_CRACE_CODES
         else:
             col_map = POST_2010_CRACE_CODES
 
