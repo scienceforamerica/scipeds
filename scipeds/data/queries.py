@@ -53,6 +53,7 @@ class QueryFilters(BaseModel):
     race_ethns: List[RaceEthn] = list(RaceEthn)
     """ Which race/ethnicity groups to include (default: all)"""
     # TODO: will adding "Total" to this break things or not?
+    # It won't break and it shouldn't return erroneous data either, bc there are no years that have both "Total" as a race/ethnicity and also the individual ones
 
     award_levels: List[AwardLevel] = list(AwardLevel)
     """Which degrees / award levels to include (default: all)"""
