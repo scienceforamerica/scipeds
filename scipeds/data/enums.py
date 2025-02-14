@@ -37,6 +37,7 @@ class RaceEthn(str, Enum):
         two_or_more (str): Two or more races
         white (str): White
         unknown (str): Unknown
+        total (str): Total
     """
 
     american_indian = "American Indian or Alaska Native"
@@ -48,6 +49,7 @@ class RaceEthn(str, Enum):
     two_or_more = "Two or more races"
     white = "White"
     unknown = "Unknown"
+    total = "Total"
 
 
 class Grouping(str, Enum):

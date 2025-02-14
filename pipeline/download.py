@@ -26,6 +26,12 @@ COMPLETION_ZIP_FILENAMES.update(
         for year in range(1999, 1994, -1)
     }
 )
+COMPLETION_ZIP_FILENAMES.update(
+    {year: f"{BASE_URL}/C{year}_CIP.zip"
+     for year in range(1994, 1983, -1)}
+)
+
+COMPLETION_ZIP_FILENAMES[1990] = f"{BASE_URL}/C8990CIP.zip"
 
 # Institution metadata files
 INSTITUTION_METADATA_FILENAMES = {
@@ -104,8 +110,10 @@ def download_from_ipeds(
     """Download all raw data directly from IPEDS."""
     # Download a single year of IPEDS data if requested / specified
     if survey_year is not None:
+        year_dir = survey_output_dir / str(survey_year)
+        year_dir.mkdir(parents=True, exist_ok=True)
         filename = COMPLETION_ZIP_FILENAMES[survey_year]
-        download_and_extract(filename, survey_output_dir, verbose)
+        download_and_extract(filename, year_dir, verbose)
         return 0
 
     # Download survey completion data
