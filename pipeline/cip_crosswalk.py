@@ -144,7 +144,7 @@ class CIPCodeCrosswalk:
         mappers = {"cip_map": cip_map, "title_map": title_map}
         self.crosswalk[year_range] = mappers
 
-    def _load_1990_to_2000_crosswalk(self):
+    def _load_1985_to_2000_crosswalk(self):
         """Load and clean/process the CIP1990 -> CIP2000 crosswalk"""
         year_range = (1990, 1999) 
         file = self.crosswalk_dir / "1985-1999" / "CIP.XLS"
