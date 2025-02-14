@@ -167,7 +167,11 @@ class IPEDSCompletionsReader:
             logger.info(
                 f"Removing {totals_mask.sum():,} rows with CIP code of 99, indicating total"
             )
-        df = df[~totals_mask]
+        df = df[~totals_mask].copy()
+
+        if year <= 1986:
+            df["cipcode"] = df["cipcode"].apply(lambda c: "0" + c if len(c) == 5 else c)
+            df["cipcode"] = df["cipcode"].apply(lambda c: c[:2] + "." + c[2:])
 
         cip2020_df = self.crosswalk.convert_to_cip2020(year, df["cipcode"])
         df = df.assign(cip2020=cip2020_df["cip2020"])
