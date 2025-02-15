@@ -1,4 +1,4 @@
-from enum import Enum, nonmember
+from enum import Enum
 from enum import property as enum_property
 
 
@@ -56,16 +56,13 @@ class Grouping(str, Enum):
     race_ethnicity = "race_ethnicity"
     intersectional = "intersectional"
 
-    _NO_WITHIN_PREFIX = nonmember((intersectional))
-    _NO_STUDENTS_SUFFIX = nonmember((gender, race_ethnicity))
-
     @enum_property
     def label_suffix(self) -> str:
-        return f"within_{self.value}" if self not in self._NO_WITHIN_PREFIX else self.value  # type: ignore
+        return f"within_{self.value}" if self is not self.intersectional else self.value
 
     @enum_property
     def students_suffix(self) -> str:
-        return "students" if self not in self._NO_STUDENTS_SUFFIX else ""  # type: ignore
+        return "students" if self is self.intersectional else ""
 
     @enum_property
     def grouping_columns(self) -> list[str]:

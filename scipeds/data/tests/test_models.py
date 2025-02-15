@@ -3,7 +3,7 @@ import unittest
 from pydantic import ValidationError
 
 from scipeds import constants
-from scipeds.data.enums import AwardLevel, FieldTaxonomy, RaceEthn
+from scipeds.data.enums import AwardLevel, FieldTaxonomy, Grouping, RaceEthn
 from scipeds.data.queries import QueryFilters, TaxonomyRollup
 
 
@@ -74,3 +74,20 @@ class FieldTaxonomyTests(unittest.TestCase):
         # Test invalid column name
         with self.assertRaises(ValidationError):
             TaxonomyRollup(taxonomy_name="not_a_valid_taxonomy", taxonomy_values=[1])
+
+
+class GroupingTests(unittest.TestCase):
+    def test_suffix(self):
+        assert Grouping.intersectional.students_suffix == "students"
+        assert Grouping.gender.students_suffix == ""
+        assert Grouping.race_ethnicity.students_suffix == ""
+
+    def test_label(self):
+        assert Grouping.intersectional.label_suffix == "intersectional"
+        assert Grouping.gender.label_suffix == "within_gender"
+        assert Grouping.race_ethnicity.label_suffix == "within_race_ethnicity"
+
+    def test_grouping_columns(self):
+        assert Grouping.intersectional.grouping_columns == ["race_ethnicity", "gender"]
+        assert Grouping.gender.grouping_columns == ["gender"]
+        assert Grouping.race_ethnicity.grouping_columns == ["race_ethnicity"]
