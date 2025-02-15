@@ -1,4 +1,5 @@
-from enum import Enum
+from enum import Enum, nonmember
+from enum import property as enum_property
 
 
 class Gender(str, Enum):
@@ -48,6 +49,29 @@ class RaceEthn(str, Enum):
     two_or_more = "Two or more races"
     white = "White"
     unknown = "Unknown"
+
+
+class Grouping(str, Enum):
+    gender = "gender"
+    race_ethnicity = "race_ethnicity"
+    intersectional = "intersectional"
+
+    _NO_WITHIN_PREFIX = nonmember((intersectional))
+    _NO_STUDENTS_SUFFIX = nonmember((gender, race_ethnicity))
+
+    @enum_property
+    def label_suffix(self) -> str:
+        return f"within_{self.value}" if self not in self._NO_WITHIN_PREFIX else self.value  # type: ignore
+
+    @enum_property
+    def students_suffix(self) -> str:
+        return "students" if self not in self._NO_STUDENTS_SUFFIX else ""  # type: ignore
+
+    @enum_property
+    def grouping_columns(self) -> list[str]:
+        return (
+            [self.value] if self is not self.intersectional else [self.race_ethnicity, self.gender]
+        )
 
 
 class AwardLevel(str, Enum):
