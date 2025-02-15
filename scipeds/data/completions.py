@@ -6,7 +6,7 @@ import pandas as pd
 
 from scipeds import constants
 from scipeds.data.engine import IPEDSQueryEngine
-from scipeds.data.enums import FieldTaxonomy
+from scipeds.data.enums import FieldTaxonomy, Grouping
 from scipeds.data.queries import QueryFilters, TaxonomyRollup
 from scipeds.utils import (
     Rate,
@@ -93,28 +93,52 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
     """
 
     UNI_GROUP_FIELDS_QUERY = """
-    WITH totals AS (
-        SELECT DISTINCT {columns}
-            ,COALESCE(SUM(n_awards) OVER ({field_group_partition}), 0)::INT64 
-                AS field_degrees_{label}
-            ,COALESCE(SUM(n_awards) OVER ({field_partition}), 0)::INT64  
-                AS field_degrees_total
-            ,COALESCE(SUM(n_awards) OVER ({group_partition}), 0)::INT64  
-                AS uni_degrees_{label}
-            ,COALESCE(SUM(n_awards) OVER ({total_partition}), 0)::INT64  
-                AS uni_degrees_total
-        FROM {completions_table}
-        WHERE
+    WITH filtered AS (
+        SELECT * FROM {completions_table}
+        WHERE 
             year BETWEEN $start_year AND $end_year
-            AND awlevel IN (SELECT UNNEST($award_levels))
             AND race_ethnicity IN (SELECT UNNEST($race_ethns))
+            AND awlevel IN (SELECT UNNEST($award_levels))
             AND majornum IN (SELECT UNNEST($majornums))
+    ), uni_field_group_totals AS (
+        SELECT unitid, {taxonomy}, {columns}
+            ,COALESCE(SUM(n_awards), 0)::INT64 AS field_degrees_{label}
+        FROM filtered
+        {taxonomy_filter}
+        GROUP BY unitid, {taxonomy}, {columns}
+    ), uni_field_totals AS (
+        SELECT unitid, {taxonomy} {year}
+            ,COALESCE(SUM(n_awards), 0)::INT64 AS field_degrees_total
+        FROM filtered
+        {taxonomy_filter}
+        GROUP BY unitid, {taxonomy} {year}
+    ), uni_group_totals AS (
+        SELECT unitid, {columns}
+            ,COALESCE(SUM(n_awards), 0)::INT64 AS uni_degrees_{label}
+        FROM filtered
+        GROUP BY unitid, {columns}
+    ), uni_totals AS (
+        SELECT unitid {year}
+            ,COALESCE(SUM(n_awards), 0)::INT64 AS uni_degrees_total
+        FROM filtered
+        GROUP BY unitid {year}
     )
-    SELECT totals.*, {institutions_table}.* 
-    FROM totals
-    LEFT JOIN {institutions_table}
-    USING (unitid)
-    ORDER BY totals.{columns};
+    SELECT
+        unitid, 
+        {taxonomy}, 
+        {columns},
+        field_degrees_{label}, 
+        field_degrees_total,
+        uni_degrees_{label},
+        uni_degrees_total
+    FROM uni_field_group_totals ufgt
+    LEFT JOIN uni_field_totals uft 
+        USING (unitid, {taxonomy} {year})
+    LEFT JOIN uni_group_totals ugt 
+        USING (unitid, {columns}) 
+    JOIN uni_totals ut 
+        USING (unitid {year})
+    ORDER BY unitid, {taxonomy}, {columns};
     """
 
     def __init__(self, db_path: Optional[Path] = constants.SCIPEDS_CACHE_DIR / constants.DB_NAME):
@@ -354,12 +378,14 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
 
     def uni_field_totals_by_grouping(
         self,
-        grouping: str,
+        grouping: Grouping,
         taxonomy: FieldTaxonomy,
         query_filters: QueryFilters,
+        taxonomy_values: list[str] | None = None,
         by_year: bool = False,
         rel_rate: bool = False,
         effect_size: bool = False,
+        show_query: bool = False,
     ) -> pd.DataFrame:
         """Aggregate completions (subject to filters) for all fields
         within a given taxonomy at each university
@@ -368,6 +394,7 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
             grouping (str): Either "race_ethnicity", "gender", or "intersectional
             taxonomy (FieldTaxonomy): Taxonomy to aggregate over
             query_filters (QueryFilters): Pre-aggregation filters to apply to raw data
+            taxonomy_values (list[str]): Optional list of field values to filter on. Default: None
             by_year (bool): Whether to group by year (True) or aggregate over all years (False).
                 Default: False
             rel_rate (bool): Whether to calculate relative representation. If true,
@@ -378,40 +405,28 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
             pd.DataFrame: Completions in each field in the taxonomy, aggregated by
                 university UNITID and chosen grouping, subject to filters
         """
-        if grouping == "race_ethnicity" or grouping == "gender":
-            label = f"within_{grouping}"
-            grouping_cols = [grouping]
-        elif grouping == "intersectional":
-            label = "intersectional"
-            grouping_cols = ["race_ethnicity", "gender"]
-        else:
-            raise ValueError(
-                f"Provided grouping {grouping} not allowed; allowed values are {self.groupings}"
-            )
+        label = grouping.label_suffix
+        columns = grouping.grouping_columns
+        if by_year:
+            columns.append("year")
+        taxonomy_filter = (
+            f"WHERE {taxonomy} IN (SELECT UNNEST($taxonomy_values))" if taxonomy_values else ""
+        )
 
-        # Format query and execute
-        year_col = ["year"] if by_year else []
-        field_group_columns = ["unitid", taxonomy] + grouping_cols + year_col
-        field_columns = ["unitid", taxonomy] + year_col
-        group_columns = ["unitid"] + grouping_cols + year_col
-        total_columns = ["unitid"] + year_col
-
-        field_group_partition = "PARTITION BY " + ", ".join(field_group_columns)
-        field_partition = "PARTITION BY " + ", ".join(field_columns)
-        group_partition = "PARTITION BY " + ", ".join(group_columns)
-        total_partition = "PARTITION BY " + ", ".join(total_columns)
         query = self.UNI_GROUP_FIELDS_QUERY.format(
             completions_table=constants.COMPLETIONS_TABLE,
-            columns=", ".join(field_group_columns),
-            label=label,
-            field_group_partition=field_group_partition,
-            field_partition=field_partition,
-            group_partition=group_partition,
-            total_partition=total_partition,
             institutions_table=constants.INSTITUTIONS_TABLE,
+            taxonomy=taxonomy,
+            taxonomy_filter=taxonomy_filter,
+            columns=", ".join(columns),
+            label=label,
+            year=", year" if by_year else "",
         )
         query_params = query_filters.model_dump()
-        df = self.get_df_from_query(query, query_params=query_params)
+        if taxonomy_values:
+            query_params["taxonomy_values"] = taxonomy_values
+
+        df = self.get_df_from_query(query, query_params=query_params, show_query=show_query)
 
         field_pct = Rate("field_pct", f"field_degrees_{label}", "field_degrees_total")
         uni_pct = Rate("uni_pct", f"uni_degrees_{label}", "uni_degrees_total")
@@ -419,7 +434,8 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
         if rel_rate or effect_size:
             df = calculate_rel_rate(df, field_pct, uni_pct)
 
+        index_cols = ["unitid", taxonomy, *columns]
         if effect_size:
-            df = calculate_effect_size(df, field_pct, uni_pct, group_cols=field_group_columns[1:])
+            df = calculate_effect_size(df, field_pct, uni_pct, group_cols=index_cols[1:])
 
-        return df.set_index(field_group_columns)
+        return df.set_index(index_cols)

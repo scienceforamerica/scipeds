@@ -28,7 +28,7 @@ class IPEDSQueryEngine:
         self.db_path = str(db_path)
 
     def get_df_from_query(
-        self, query: str, query_params: Optional[Dict[str, Any]] = None
+        self, query: str, query_params: Optional[Dict[str, Any]] = None, show_query: bool = False
     ) -> pd.DataFrame:
         """Return the dataframe result of the provided SQL query on the pre-processed duckdb
 
@@ -36,6 +36,8 @@ class IPEDSQueryEngine:
             query (str): SQL query (using duckdb syntax)
             query_params (Dict[str, Any], optional): Prepared statement variables for query.
                 Defaults to None.
+            show_query (bool): Whether to print the query and parameters before executing.
+                Defaults to False
 
         Returns:
             pd.DataFrame: Data returned by query
@@ -63,7 +65,9 @@ class IPEDSQueryEngine:
         Returns:
             pd.DataFrame: Data frame of CIP codes and corresponding taxonomy titles
         """
-        cip_codes = self.get_df_from_query(f"SELECT * FROM {CIP_TABLE}").set_index("cip2020")
+        cip_codes = self.get_df_from_query(
+            f"SELECT * FROM {CIP_TABLE} ORDER BY cip2020"
+        ).set_index("cip2020")
         return cip_codes
 
     def get_institutions_table(self, cols: str | list[str] | None = None) -> pd.DataFrame:

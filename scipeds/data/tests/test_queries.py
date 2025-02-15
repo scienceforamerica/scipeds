@@ -11,6 +11,7 @@ from scipeds.data.completions import CompletionsQueryEngine
 from scipeds.data.enums import (
     AwardLevel,
     FieldTaxonomy,
+    Grouping,
     NCSESDetailedFieldGroup,
     NCSESSciGroup,
     RaceEthn,
@@ -44,7 +45,6 @@ class QueryEngineTests(unittest.TestCase):
             result.iloc[:, :n_cols],
             expected,
             check_categorical=False,
-            check_dtype=False,
             check_index_type=False,
         )
 
@@ -168,7 +168,7 @@ class QueryEngineTests(unittest.TestCase):
         # One major in STEM = 3 men/women per uni in each group
         # Two unis => double
         # Two years => double again
-        one_stem_gender_subtotals = np.array([3.0, 6.0, 9.0, 18.0]) * 2 * 2
+        one_stem_gender_subtotals = np.array([3, 6, 9, 18]) * 2 * 2
         expected = pd.DataFrame(
             columns=expected_cols,
             data=[[gender] + one_stem_gender_subtotals.tolist() for gender in self.genders],
@@ -186,7 +186,7 @@ class QueryEngineTests(unittest.TestCase):
         # Two majors in STEM = 6 men/women per group per uni
         # Two unis => double
         # Two years => double again
-        two_stem_gender_subtotals = np.array([6.0, 12.0, 9.0, 18.0]) * 2 * 2
+        two_stem_gender_subtotals = np.array([6, 12, 9, 18]) * 2 * 2
         expected = pd.DataFrame(
             columns=expected_cols,
             data=[[gender] + two_stem_gender_subtotals.tolist() for gender in self.genders],
@@ -207,7 +207,7 @@ class QueryEngineTests(unittest.TestCase):
         # One major in STEM = 2 people per group per uni
         # Two unis => double
         # Two years => double again
-        one_stem_re_subtotals = np.array([2.0, 6.0, 6.0, 18.0]) * 2 * 2
+        one_stem_re_subtotals = np.array([2, 6, 6, 18]) * 2 * 2
         expected = pd.DataFrame(
             columns=expected_cols,
             data=[[race] + one_stem_re_subtotals.tolist() for race in self.race_ethnicities],
@@ -220,7 +220,7 @@ class QueryEngineTests(unittest.TestCase):
         # Two majors in STEM = 2 * 2 = 4 people per group per uni
         # Two unis => double
         # Two years => double again
-        two_stem_re_subtotals = np.array([4.0, 12.0, 6.0, 18.0]) * 2 * 2
+        two_stem_re_subtotals = np.array([4, 12, 6, 18]) * 2 * 2
         expected = pd.DataFrame(
             columns=expected_cols,
             data=[[race] + two_stem_re_subtotals.tolist() for race in self.race_ethnicities],
@@ -244,7 +244,7 @@ class QueryEngineTests(unittest.TestCase):
         # and 3 people within that sub-group overall at each uni
         # Two unis => double
         # Two years => double again
-        subtotals = np.array([1.0, 6.0, 3.0, 18.0]) * 2 * 2
+        subtotals = np.array([1, 6, 3, 18]) * 2 * 2
         expected = pd.DataFrame(
             columns=expected_cols,
             data=[
@@ -269,7 +269,7 @@ class QueryEngineTests(unittest.TestCase):
             "uni_degrees_within_gender",
             "uni_degrees_total",
         ]
-        one_stem_gender_subtotals = np.array([3.0, 6.0, 9.0, 18.0]) * 2
+        one_stem_gender_subtotals = np.array([3, 6, 9, 18]) * 2
         expected = pd.DataFrame(
             columns=expected_cols,
             data=[
@@ -298,7 +298,7 @@ class QueryEngineTests(unittest.TestCase):
         # 6 people per major total
         # 9 people per uni degree per gender
         # 18 people per uni degree total
-        subtotals = np.array([3.0, 6.0, 9.0, 18.0]) * 2 * 2
+        subtotals = np.array([3, 6, 9, 18]) * 2 * 2
         expected = pd.DataFrame(
             columns=expected_cols,
             data=[
@@ -325,7 +325,7 @@ class QueryEngineTests(unittest.TestCase):
         # 6 people per race subtotal
         # 6 people per uni per race
         # 18 people per uni total
-        subtotals = np.array([2.0, 6.0, 6.0, 18.0]) * 2 * 2
+        subtotals = np.array([2, 6, 6, 18]) * 2 * 2
         expected = pd.DataFrame(
             columns=expected_cols,
             data=[
@@ -355,7 +355,7 @@ class QueryEngineTests(unittest.TestCase):
         # 6 people per race subtotal
         # 6 people per uni per race
         # 18 people per uni total
-        subtotals = np.array([2.0, 6.0, 6.0, 18.0]) * 2
+        subtotals = np.array([2, 6, 6, 18]) * 2
         expected = pd.DataFrame(
             columns=expected_cols,
             data=[
@@ -387,7 +387,7 @@ class QueryEngineTests(unittest.TestCase):
         # 6 people per major per total
         # 3 people per uni per race+gender
         # 18 people per uni total
-        subtotals = np.array([1.0, 6.0, 3.0, 18.0]) * 2 * 2
+        subtotals = np.array([1, 6, 3, 18]) * 2 * 2
         expected = pd.DataFrame(
             columns=expected_cols,
             data=[
@@ -421,7 +421,7 @@ class QueryEngineTests(unittest.TestCase):
         ]
         # 3 people per major within gender per uni
         # 2 timesteps
-        subtotals = np.array([3.0, 6.0, 9.0, 18.0]) * 2
+        subtotals = np.array([3, 6, 9, 18]) * 2
         expected = pd.DataFrame(
             columns=expected_cols,
             data=[
@@ -446,7 +446,7 @@ class QueryEngineTests(unittest.TestCase):
             "uni_degrees_total",
         ]
         # 3 people per major within gender per uni
-        subtotals = np.array([3.0, 6.0, 9.0, 18.0])
+        subtotals = np.array([3, 6, 9, 18])
         expected = pd.DataFrame(
             columns=expected_cols,
             data=[
@@ -473,7 +473,7 @@ class QueryEngineTests(unittest.TestCase):
         # 2 people per major per race/ethn per uni
         # 1 STEM major of 3 total majors
         # 2 timesteps
-        subtotals = np.array([2.0, 6.0, 6.0, 18.0]) * 2
+        subtotals = np.array([2, 6, 6, 18]) * 2
         expected = pd.DataFrame(
             columns=expected_cols,
             data=[
@@ -500,7 +500,7 @@ class QueryEngineTests(unittest.TestCase):
         # 2 people per major per race/ethn per uni
         # 1 STEM major of 3 total majors
         # 2 timesteps
-        subtotals = np.array([1.0, 6.0, 3.0, 18.0]) * 2
+        subtotals = np.array([1, 6, 3, 18]) * 2
         expected = pd.DataFrame(
             columns=expected_cols,
             data=[
@@ -530,7 +530,7 @@ class QueryEngineTests(unittest.TestCase):
         ]
         # 3 people per major within gender per uni
         # 2 timesteps
-        subtotals = np.array([3.0, 6.0, 9.0, 18.0]) * 2
+        subtotals = np.array([3, 6, 9, 18]) * 2
         expected = pd.DataFrame(
             columns=expected_cols,
             data=[
@@ -541,7 +541,7 @@ class QueryEngineTests(unittest.TestCase):
             ],
         ).set_index(expected_cols[:3])
         result = self.engine.uni_field_totals_by_grouping(
-            grouping="gender",
+            grouping=Grouping.gender,
             taxonomy=FieldTaxonomy.ncses_detailed_field_group,
             query_filters=filters,
         )
@@ -559,7 +559,7 @@ class QueryEngineTests(unittest.TestCase):
             "uni_degrees_total",
         ]
         # 3 people per major within gender per uni
-        subtotals = np.array([3.0, 6.0, 9.0, 18.0])
+        subtotals = np.array([3, 6, 9, 18])
         expected = pd.DataFrame(
             columns=expected_cols,
             data=[
@@ -571,7 +571,7 @@ class QueryEngineTests(unittest.TestCase):
             ],
         ).set_index(expected_cols[:4])
         result = self.engine.uni_field_totals_by_grouping(
-            grouping="gender",
+            grouping=Grouping.gender,
             taxonomy=FieldTaxonomy.ncses_detailed_field_group,
             query_filters=filters,
             by_year=True,
@@ -591,7 +591,7 @@ class QueryEngineTests(unittest.TestCase):
         # 2 people per major per race/ethn per uni
         # 1 STEM major of 3 total majors
         # 2 timesteps
-        subtotals = np.array([2.0, 6.0, 6.0, 18.0]) * 2
+        subtotals = np.array([2, 6, 6, 18]) * 2
         expected = pd.DataFrame(
             columns=expected_cols,
             data=[
@@ -602,7 +602,7 @@ class QueryEngineTests(unittest.TestCase):
             ],
         ).set_index(expected_cols[:3])
         result = self.engine.uni_field_totals_by_grouping(
-            grouping="race_ethnicity",
+            grouping=Grouping.race_ethnicity,
             taxonomy=FieldTaxonomy.ncses_detailed_field_group,
             query_filters=filters,
         )
@@ -622,7 +622,7 @@ class QueryEngineTests(unittest.TestCase):
         # 2 people per major per race/ethn per uni
         # 1 STEM major of 3 total majors
         # 2 timesteps
-        subtotals = np.array([1.0, 6.0, 3.0, 18.0]) * 2
+        subtotals = np.array([1, 6, 3, 18]) * 2
         expected = pd.DataFrame(
             columns=expected_cols,
             data=[
@@ -634,8 +634,44 @@ class QueryEngineTests(unittest.TestCase):
             ],
         ).set_index(expected_cols[:4])
         result = self.engine.uni_field_totals_by_grouping(
-            grouping="intersectional",
+            grouping=Grouping.intersectional,
             taxonomy=FieldTaxonomy.ncses_detailed_field_group,
             query_filters=filters,
+        )
+        self._check_result(result, expected)
+
+        # Test intersectional by year with filtered fields
+        expected_cols = [
+            "unitid",
+            "ncses_detailed_field_group",
+            "race_ethnicity",
+            "gender",
+            "year",
+            "field_degrees_intersectional",
+            "field_degrees_total",
+            "uni_degrees_intersectional",
+            "uni_degrees_total",
+        ]
+        # 2 people per major per race/ethn per uni
+        # 1 STEM major of 3 total majors
+        # 2 timesteps
+        subtotals = np.array([1, 6, 3, 18])
+        expected = pd.DataFrame(
+            columns=expected_cols,
+            data=[
+                [unitid, dfg, race_ethn, gender, year] + subtotals.tolist()
+                for unitid in self.unitids
+                for dfg in self.dfgs[:2]
+                for race_ethn in self.race_ethnicities
+                for gender in self.genders
+                for year in self.years
+            ],
+        ).set_index(expected_cols[:5])
+        result = self.engine.uni_field_totals_by_grouping(
+            grouping=Grouping.intersectional,
+            taxonomy=FieldTaxonomy.ncses_detailed_field_group,
+            taxonomy_values=self.dfgs[:2],
+            query_filters=filters,
+            by_year=True,
         )
         self._check_result(result, expected)
