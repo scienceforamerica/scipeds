@@ -52,6 +52,9 @@ class IPEDSInstitutionCharacteristicsReader:
             logger.info(
                 f"Read raw data with {raw_df.shape[0]:,} rows and {raw_df.shape[1]:,} cols"
             )
+        # strip all whitespace
+        for col in raw_df.columns:
+            raw_df[col] = raw_df[col].str.strip()
         return raw_df
 
     def _find_datadict_file(self, folder: Path) -> Path:
@@ -81,7 +84,6 @@ class IPEDSInstitutionCharacteristicsReader:
                     zip(var_values[self.CODE_VAL_COL], var_values[self.CODE_LABEL_COL]),
                 )
                 data_dict[var_name] = code_map
-
         return data_dict
 
     def _get_varname_dict(self, filepath: Path, verbose: bool = True) -> dict:
@@ -113,6 +115,8 @@ class IPEDSInstitutionCharacteristicsReader:
         # Convert codes
         for col, mapping in code_dict.items():
             raw_df[col] = raw_df[col].map(mapping)
+            if raw_df[col].isnull().all():
+                logger.warning(f"Column {col} was all null after mapping.")
 
         # Convert varnames
         raw_df.rename(columns=varname_dict, inplace=True)
@@ -163,12 +167,12 @@ def institution_characteristics(
         df = reader.read_institution_characteristics(year_dir, verbose=verbose)
         dfs.append(df)
 
-    # Combine and use most recent data by forward filling any null values
     if verbose:
         logger.info(
             "Combining institutions characteristics directory info across years, "
             "using most recently available data."
         )
+    # Combine and fill null data with most recently available data
     combined = pd.concat(dfs).sort_values("metadata_vintage")
     combined.update(combined.groupby("unitid").ffill())
     most_recent = combined.groupby("unitid").tail(1).sort_values("unitid")
