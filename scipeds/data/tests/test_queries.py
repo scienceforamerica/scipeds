@@ -105,12 +105,14 @@ class QueryEngineTests(unittest.TestCase):
         )
 
         result = self.engine.rollup_by_grouping(
-            grouping="gender", rollup=fields_agg, query_filters=filters
+            grouping=Grouping.gender, rollup=fields_agg, query_filters=filters
         )
         assert result.empty
 
         result = self.engine.field_totals_by_grouping(
-            grouping="gender", taxonomy=FieldTaxonomy.ncses_field_group, query_filters=filters
+            grouping=Grouping.gender,
+            taxonomy=FieldTaxonomy.ncses_field_group,
+            query_filters=filters,
         )
         assert result.empty
 
@@ -118,12 +120,14 @@ class QueryEngineTests(unittest.TestCase):
         with self.assertWarnsRegex(UserWarning, "IPEDS"):
             filters = QueryFilters(start_year=1996, end_year=2021)
         result = self.engine.rollup_by_grouping(
-            grouping="gender", rollup=fields_agg, query_filters=filters
+            grouping=Grouping.gender, rollup=fields_agg, query_filters=filters
         )
         assert result.empty
 
         result = self.engine.field_totals_by_grouping(
-            grouping="gender", taxonomy=FieldTaxonomy.ncses_field_group, query_filters=filters
+            grouping=Grouping.gender,
+            taxonomy=FieldTaxonomy.ncses_field_group,
+            query_filters=filters,
         )
         assert result.empty
 
@@ -131,12 +135,14 @@ class QueryEngineTests(unittest.TestCase):
         with self.assertWarnsRegex(UserWarning, "IPEDS"):
             filters = QueryFilters(race_ethns=[RaceEthn.unknown])
         result = self.engine.rollup_by_grouping(
-            grouping="gender", rollup=fields_agg, query_filters=filters
+            grouping=Grouping.gender, rollup=fields_agg, query_filters=filters
         )
         assert result.empty
 
         result = self.engine.field_totals_by_grouping(
-            grouping="gender", taxonomy=FieldTaxonomy.ncses_field_group, query_filters=filters
+            grouping=Grouping.gender,
+            taxonomy=FieldTaxonomy.ncses_field_group,
+            query_filters=filters,
         )
         assert result.empty
 
@@ -144,7 +150,9 @@ class QueryEngineTests(unittest.TestCase):
         with self.assertWarnsRegex(UserWarning, "IPEDS"):
             filters = QueryFilters(majornums=2)
         result = self.engine.field_totals_by_grouping(
-            grouping="gender", taxonomy=FieldTaxonomy.ncses_field_group, query_filters=filters
+            grouping=Grouping.gender,
+            taxonomy=FieldTaxonomy.ncses_field_group,
+            query_filters=filters,
         )
         assert result.empty
 
@@ -174,7 +182,7 @@ class QueryEngineTests(unittest.TestCase):
             data=[[gender] + one_stem_gender_subtotals.tolist() for gender in self.genders],
         ).set_index("gender")
         result = self.engine.rollup_by_grouping(
-            grouping="gender", rollup=one_stem, query_filters=filters
+            grouping=Grouping.gender, rollup=one_stem, query_filters=filters
         )
         self._check_result(result, expected)
 
@@ -192,7 +200,7 @@ class QueryEngineTests(unittest.TestCase):
             data=[[gender] + two_stem_gender_subtotals.tolist() for gender in self.genders],
         ).set_index("gender")
         result = self.engine.rollup_by_grouping(
-            grouping="gender", rollup=two_stem, query_filters=filters
+            grouping=Grouping.gender, rollup=two_stem, query_filters=filters
         )
         self._check_result(result, expected)
 
@@ -213,7 +221,7 @@ class QueryEngineTests(unittest.TestCase):
             data=[[race] + one_stem_re_subtotals.tolist() for race in self.race_ethnicities],
         ).set_index("race_ethnicity")
         result = self.engine.rollup_by_grouping(
-            grouping="race_ethnicity", rollup=one_stem, query_filters=filters
+            grouping=Grouping.race_ethnicity, rollup=one_stem, query_filters=filters
         )
         self._check_result(result, expected)
 
@@ -226,7 +234,7 @@ class QueryEngineTests(unittest.TestCase):
             data=[[race] + two_stem_re_subtotals.tolist() for race in self.race_ethnicities],
         ).set_index("race_ethnicity")
         result = self.engine.rollup_by_grouping(
-            grouping="race_ethnicity", rollup=two_stem, query_filters=filters
+            grouping=Grouping.race_ethnicity, rollup=two_stem, query_filters=filters
         )
         self._check_result(result, expected)
 
@@ -254,7 +262,7 @@ class QueryEngineTests(unittest.TestCase):
             ],
         ).set_index(["race_ethnicity", "gender"])
         result = self.engine.rollup_by_grouping(
-            grouping="intersectional", rollup=one_stem, query_filters=filters
+            grouping=Grouping.intersectional, rollup=one_stem, query_filters=filters
         )
         self._check_result(result, expected)
 
@@ -279,7 +287,7 @@ class QueryEngineTests(unittest.TestCase):
             ],
         ).set_index(["gender", "year"])
         result = self.engine.rollup_by_grouping(
-            grouping="gender", rollup=one_stem, query_filters=filters, by_year=True
+            grouping=Grouping.gender, rollup=one_stem, query_filters=filters, by_year=True
         )
         self._check_result(result, expected)
 
@@ -306,7 +314,7 @@ class QueryEngineTests(unittest.TestCase):
             ],
         ).set_index(expected_cols[:2])
         result = self.engine.field_totals_by_grouping(
-            grouping="gender",
+            grouping=Grouping.gender,
             taxonomy=FieldTaxonomy.ncses_detailed_field_group,
             query_filters=filters,
         )
@@ -335,7 +343,7 @@ class QueryEngineTests(unittest.TestCase):
             ],
         ).set_index(expected_cols[:2])
         result = self.engine.field_totals_by_grouping(
-            grouping="race_ethnicity",
+            grouping=Grouping.race_ethnicity,
             taxonomy=FieldTaxonomy.ncses_detailed_field_group,
             query_filters=filters,
         )
@@ -366,7 +374,7 @@ class QueryEngineTests(unittest.TestCase):
             ],
         ).set_index(expected_cols[:3])
         result = self.engine.field_totals_by_grouping(
-            grouping="race_ethnicity",
+            grouping=Grouping.race_ethnicity,
             taxonomy=FieldTaxonomy.ncses_detailed_field_group,
             query_filters=filters,
             by_year=True,
@@ -398,7 +406,7 @@ class QueryEngineTests(unittest.TestCase):
             ],
         ).set_index(expected_cols[:3])
         result = self.engine.field_totals_by_grouping(
-            grouping="intersectional",
+            grouping=Grouping.intersectional,
             taxonomy=FieldTaxonomy.ncses_detailed_field_group,
             query_filters=filters,
         )
@@ -431,7 +439,7 @@ class QueryEngineTests(unittest.TestCase):
             ],
         ).set_index(expected_cols[:2])
         result = self.engine.uni_rollup_by_grouping(
-            grouping="gender", rollup=fields_agg, query_filters=filters
+            grouping=Grouping.gender, rollup=fields_agg, query_filters=filters
         )
         self._check_result(result, expected)
 
@@ -457,7 +465,7 @@ class QueryEngineTests(unittest.TestCase):
             ],
         ).set_index(expected_cols[:3])
         result = self.engine.uni_rollup_by_grouping(
-            grouping="gender", rollup=fields_agg, query_filters=filters, by_year=True
+            grouping=Grouping.gender, rollup=fields_agg, query_filters=filters, by_year=True
         )
         self._check_result(result, expected)
 
@@ -483,7 +491,7 @@ class QueryEngineTests(unittest.TestCase):
             ],
         ).set_index(expected_cols[:2])
         result = self.engine.uni_rollup_by_grouping(
-            grouping="race_ethnicity", rollup=fields_agg, query_filters=filters
+            grouping=Grouping.race_ethnicity, rollup=fields_agg, query_filters=filters
         )
         self._check_result(result, expected)
 
@@ -511,7 +519,7 @@ class QueryEngineTests(unittest.TestCase):
             ],
         ).set_index(expected_cols[:3])
         result = self.engine.uni_rollup_by_grouping(
-            grouping="intersectional", rollup=fields_agg, query_filters=filters
+            grouping=Grouping.intersectional, rollup=fields_agg, query_filters=filters
         )
         self._check_result(result, expected)
 

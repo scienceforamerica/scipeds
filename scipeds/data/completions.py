@@ -1,10 +1,8 @@
 import warnings
-from pathlib import Path
-from typing import Optional
 
 import pandas as pd
 
-from scipeds import constants
+from scipeds.constants import COMPLETIONS_TABLE
 from scipeds.data.engine import IPEDSQueryEngine
 from scipeds.data.enums import FieldTaxonomy, Grouping
 from scipeds.data.queries import QueryFilters, TaxonomyRollup
@@ -16,83 +14,7 @@ from scipeds.utils import (
 
 
 class CompletionsQueryEngine(IPEDSQueryEngine):
-    GROUP_QUERY = """
-    SELECT DISTINCT {grouping}
-        ,COALESCE(
-            SUM(CASE WHEN {taxonomy} in (SELECT UNNEST($taxonomy_values)) THEN n_awards ELSE 0 END)
-            OVER({subgroup_partition})
-            ,0)::INT64 AS rollup_degrees_{label}
-        ,COALESCE(
-            SUM(CASE WHEN {taxonomy} in (SELECT UNNEST($taxonomy_values)) THEN n_awards ELSE 0 END)
-            OVER({total_partition})
-            ,0)::INT64 AS rollup_degrees_total
-        ,COALESCE(
-            SUM(n_awards) 
-            OVER({subgroup_partition})
-            ,0)::INT64 AS uni_degrees_{label}
-        ,COALESCE(
-            SUM(n_awards) 
-            OVER({total_partition})
-            ,0)::INT64 AS uni_degrees_total
-    FROM {completions_table}
-    WHERE
-        year BETWEEN $start_year AND $end_year
-        AND awlevel IN (SELECT UNNEST($award_levels))
-        AND race_ethnicity IN (SELECT UNNEST($race_ethns))
-        AND majornum IN (SELECT UNNEST($majornums))
-    ORDER BY {grouping};
-    """
-
     GROUP_FIELDS_QUERY = """
-    SELECT DISTINCT {columns}
-        ,COALESCE( SUM(n_awards) OVER ({field_group_partition}), 0)::INT64
-            AS field_degrees_{label}
-        ,COALESCE( SUM(n_awards) OVER ({field_partition}), 0)::INT64 
-            AS field_degrees_total
-        ,COALESCE( SUM(n_awards) OVER ({group_partition}), 0)::INT64 
-            AS uni_degrees_{label}
-        ,COALESCE( SUM(n_awards) OVER ({total_partition}), 0)::INT64
-            AS uni_degrees_total
-    FROM {completions_table}
-    WHERE
-        year BETWEEN $start_year AND $end_year
-        AND awlevel IN (SELECT UNNEST($award_levels))
-        AND race_ethnicity IN (SELECT UNNEST($race_ethns))
-        AND majornum IN (SELECT UNNEST($majornums))
-    ORDER BY {columns};
-    """
-
-    UNI_GROUP_QUERY = """
-    WITH totals AS (
-        SELECT DISTINCT {columns}
-            ,COALESCE(
-                SUM(n_awards)
-                    FILTER(WHERE {taxonomy} in (SELECT UNNEST($taxonomy_values)))
-                    OVER({subtotal_partition})
-                ,0)::INT64 AS rollup_degrees_{label}
-            ,COALESCE( SUM(n_awards) 
-                    FILTER(WHERE {taxonomy} in (SELECT UNNEST($taxonomy_values)))
-                    OVER({total_partition})
-                ,0)::INT64 AS rollup_degrees_total
-            ,COALESCE( SUM(n_awards) OVER({subtotal_partition} )
-                ,0)::INT64 AS uni_degrees_{label}
-            ,COALESCE( SUM(n_awards) OVER({total_partition})
-                ,0)::INT64 AS uni_degrees_total
-        FROM {completions_table}
-        WHERE
-            year BETWEEN $start_year AND $end_year
-            AND race_ethnicity IN (SELECT UNNEST($race_ethns))
-            AND awlevel IN (SELECT UNNEST($award_levels))
-            AND majornum IN (SELECT UNNEST($majornums))
-    )
-    SELECT totals.*, {institutions_table}.*
-    FROM totals
-    LEFT JOIN {institutions_table}
-    USING (unitid)
-    ORDER BY totals.{columns};
-    """
-
-    UNI_GROUP_FIELDS_QUERY = """
     WITH filtered AS (
         SELECT * FROM {completions_table}
         WHERE 
@@ -100,57 +22,30 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
             AND race_ethnicity IN (SELECT UNNEST($race_ethns))
             AND awlevel IN (SELECT UNNEST($award_levels))
             AND majornum IN (SELECT UNNEST($majornums))
-    ), uni_field_group_totals AS (
-        SELECT unitid, {taxonomy}, {grouping_columns} {by_year}
-            ,COALESCE(SUM(n_awards), 0)::INT64 AS field_degrees_{label}
-        FROM filtered {taxonomy_filter}
-        GROUP BY unitid, {taxonomy}, {grouping_columns} {by_year}
-    ), uni_field_totals AS (
-        SELECT unitid, {taxonomy} {by_year}
-            ,COALESCE(SUM(n_awards), 0)::INT64 AS field_degrees_total
-        FROM filtered {taxonomy_filter}
-        GROUP BY unitid, {taxonomy} {by_year}
-    ), uni_group_totals AS (
-        SELECT unitid, {grouping_columns} {by_year}
-            ,COALESCE(SUM(n_awards), 0)::INT64 AS uni_degrees_{label}
-        FROM filtered
-        GROUP BY unitid, {grouping_columns} {by_year}
-    ), uni_totals AS (
-        SELECT unitid {by_year}
-            ,COALESCE(SUM(n_awards), 0)::INT64 AS uni_degrees_total
-        FROM filtered
-        GROUP BY unitid {by_year}
+    ), 
+    field_group_totals AS (
+        {field_group_total_select}
+    ), 
+    field_totals AS (
+        {field_total_select}
+    ), 
+    group_totals AS (
+        {group_total_select}
+    ), 
+    totals AS (
+        {total_select}
     )
     SELECT
-        unitid, 
-        {taxonomy}, 
-        {grouping_columns} {by_year},
-        field_degrees_{label}, 
-        field_degrees_total,
-        uni_degrees_{label},
-        uni_degrees_total
-    FROM uni_field_group_totals ufgt
-    LEFT JOIN uni_field_totals uft 
-        USING (unitid, {taxonomy} {by_year})
-    LEFT JOIN uni_group_totals ugt 
-        USING (unitid, {grouping_columns} {by_year}) 
-    JOIN uni_totals ut 
-        USING (unitid {by_year})
-    ORDER BY unitid, {taxonomy}, {grouping_columns} {by_year};
+        {field_group_cols},
+        {field_group_degrees},
+        {field_total_degrees},
+        {group_total_degrees},
+        {total_degrees},
+    FROM field_group_totals
+        {joins}
+     
+    ORDER BY {field_group_cols}; 
     """
-
-    def __init__(self, db_path: Optional[Path] = constants.SCIPEDS_CACHE_DIR / constants.DB_NAME):
-        """A structured way to query the IPEDS completions table
-
-        Args:
-            db_path (Optional[Path], optional): Path to pre-processed database file.
-                Defaults to constants.CACHE_DIR / constants.DB_NAME.
-
-        Raises:
-            FileNotFoundError: Pre-processed database file not found.
-        """
-        super().__init__(db_path)
-        self.groupings = ("race_ethnicity", "gender", "intersectional")
 
     def _check_rollup_values(self, rollup: TaxonomyRollup):
         """Check whether the rollup values provided exist in the specified taxonomy, and warn
@@ -160,7 +55,7 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
             rollup (TaxonomyRollup): Taxonomy rollup
         """
         unique_values = self.get_df_from_query(
-            f"SELECT DISTINCT {rollup.taxonomy_name} FROM {constants.COMPLETIONS_TABLE}"
+            f"SELECT DISTINCT {rollup.taxonomy_name} FROM {COMPLETIONS_TABLE}"
         )[rollup.taxonomy_name]
         missing = [value for value in rollup.taxonomy_values if value not in unique_values.values]
         if (n_missing := len(missing)) > 0:
@@ -172,9 +67,88 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
                 "the correct or expected results."
             )
 
+    def _format_query(
+        self,
+        grouping: Grouping,
+        agg_type: str,
+        field_group_cols: list[str],
+        field_total_cols: list[str],
+        group_total_cols: list[str],
+        total_cols: list[str],
+        taxonomy_filter: str,
+    ) -> str:
+        """Format the query according to the provided arguments
+
+        Args:
+            grouping (Grouping): How to group the data
+            field_group_cols (list[str]): Lowest level of aggregation
+            field_total_cols (list[str]): Field-only aggregation
+            group_total_cols (list[str]): Grouping-only aggregation
+            total_cols (list[str]): Highest level of aggregation
+            taxonomy_filter (str): Filter to apply to the data
+
+        Returns:
+            str: Formatted query
+        """
+
+        def format_subquery(cols: list[str], name: str, filter: str = "") -> str:
+            selection = ",".join(cols) + "," if cols else ""
+            groupby = f"GROUP BY {','.join(cols)}" if cols else ""
+            return f"""SELECT {selection} COALESCE(SUM(n_awards), 0)::INT64 AS {name}
+                FROM filtered {filter}
+                {groupby}"""
+
+        field_group_total_select = format_subquery(
+            field_group_cols, f"{agg_type}_degrees_{grouping.label_suffix}", taxonomy_filter
+        )
+        field_total_select = format_subquery(
+            field_total_cols, f"{agg_type}_degrees_total", taxonomy_filter
+        )
+        group_total_select = format_subquery(
+            group_total_cols, f"uni_degrees_{grouping.label_suffix}"
+        )
+        total_select = format_subquery(total_cols, "uni_degrees_total")
+
+        def format_join(cols: list[str], var_name: str, table_name: str) -> tuple[str, str]:
+            if cols:
+                join_str = f"LEFT JOIN {table_name} USING ({','.join(cols)})"
+            else:
+                var_name = f"{table_name}.{var_name}"
+                join_str = f",{table_name}"
+            return var_name, join_str
+
+        fgt_var, _ = format_join(
+            field_group_cols, f"{agg_type}_degrees_{grouping.label_suffix}", "field_group_totals"
+        )
+        ft_var, ft_join = format_join(
+            field_total_cols, f"{agg_type}_degrees_total", "field_totals"
+        )
+        gt_var, gt_join = format_join(
+            group_total_cols, f"uni_degrees_{grouping.label_suffix}", "group_totals"
+        )
+        t_var, t_join = format_join(total_cols, "uni_degrees_total", "totals")
+        joins = list(sorted([ft_join, gt_join, t_join], reverse=True))
+        joins = "\n".join(joins)
+
+        query = self.GROUP_FIELDS_QUERY.format(
+            completions_table=COMPLETIONS_TABLE,
+            field_group_cols=",".join(field_group_cols),
+            field_group_total_select=field_group_total_select,
+            field_total_select=field_total_select,
+            group_total_select=group_total_select,
+            total_select=total_select,
+            field_group_degrees=fgt_var,
+            field_total_degrees=ft_var,
+            group_total_degrees=gt_var,
+            total_degrees=t_var,
+            joins=joins,
+        )
+
+        return query
+
     def rollup_by_grouping(
         self,
-        grouping: str,
+        grouping: Grouping,
         rollup: TaxonomyRollup,
         query_filters: QueryFilters,
         by_year: bool = False,
@@ -184,7 +158,7 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
         aggregating by selected grouping and subject to the applied filters
 
         Args:
-            grouping (str): Variable to group by (either "gender" or "race_ethnicity")
+            grouping (Grouping): How to group the data
             rollup (TaxonomyRollup): Fields in taxonomy to include in aggregation
             query_filters (QueryFilters): Filters to apply prior to aggregation
             by_year (bool): Whether to group by year (True) or aggregate over all years (False).
@@ -196,35 +170,24 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
             pd.DataFrame: Completions within fields in the roll-up,
                 aggregated by chosen grouping and subject to filters
         """
-        # Add year to the group by if we want a timeseries
-        col_select = ["year"] if by_year else []
-
-        # Change the column labels for easier parsing based on the grouping
-        if grouping == "race_ethnicity" or grouping == "gender":
-            col_select = [grouping] + col_select
-            label = f"within_{grouping}"
-        elif grouping == "intersectional":
-            col_select = ["race_ethnicity", "gender"] + col_select
-            label = "intersectional"
-        else:
-            raise ValueError(
-                f"Provided grouping {grouping} not allowed; allowed values are {self.groupings}"
-            )
-
         # Warn the user if rollup values are missing from the specified taxonomy
         self._check_rollup_values(rollup)
+        taxonomy_filter = f"WHERE {rollup.taxonomy_name} IN (SELECT UNNEST($taxonomy_values))"
+        year = ["year"] if by_year else []
+        field_group_cols = [*grouping.grouping_columns, *year]
+        field_total_cols = [*year]
+        group_total_cols = [*grouping.grouping_columns, *year]
+        total_cols = [*year]
 
         # Format and execute the query
-        grouping_columns = ",".join(col_select)
-        subgroup_partition = f"PARTITION BY {grouping_columns}"
-        total_partition = "PARTITION BY year" if by_year else ""
-        query = self.GROUP_QUERY.format(
-            completions_table=constants.COMPLETIONS_TABLE,
-            grouping=grouping_columns,
-            subgroup_partition=subgroup_partition,
-            total_partition=total_partition,
-            taxonomy=rollup.taxonomy_name,
-            label=label,
+        query = self._format_query(
+            grouping=grouping,
+            agg_type="rollup",
+            field_group_cols=field_group_cols,
+            field_total_cols=field_total_cols,
+            group_total_cols=group_total_cols,
+            total_cols=total_cols,
+            taxonomy_filter=taxonomy_filter,
         )
         query_params = query_filters.model_dump()
         query_params.update(rollup.model_dump(include={"taxonomy_values"}))
@@ -232,24 +195,27 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
 
         # Calculate relative rate
         if rel_rate:
-            rollup_pct = Rate("rollup_pct", f"rollup_degrees_{label}", "rollup_degrees_total")
-            uni_pct = Rate("uni_pct", f"uni_degrees_{label}", "uni_degrees_total")
+            rollup_pct = Rate(
+                "rollup_pct", f"rollup_degrees_{grouping.label_suffix}", "rollup_degrees_total"
+            )
+            uni_pct = Rate("uni_pct", f"uni_degrees_{grouping.label_suffix}", "uni_degrees_total")
             df = calculate_rel_rate(df, rollup_pct, uni_pct)
 
-        return df.set_index(col_select)
+        return df.set_index(field_group_cols)
 
     def field_totals_by_grouping(
         self,
-        grouping: str,
+        grouping: Grouping,
         taxonomy: FieldTaxonomy,
         query_filters: QueryFilters,
+        taxonomy_values: list[str] | None = None,
         by_year: bool = False,
         rel_rate: bool = False,
     ) -> pd.DataFrame:
         """Compute aggregate counts for all fields in a given taxonomy
 
         Args:
-            grouping (str): Either "race_ethnicity", "gender", or "intersectional
+            grouping (Grouping): How to group the data
             taxonomy (FieldTaxonomy): Taxonomy to aggregate over
             query_filters (QueryFilters): Pre-aggregation filters to apply to raw data
             by_year (bool): Whether to group by year (True) or aggregate over all years (False).
@@ -259,53 +225,40 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
         Returns:
             pd.DataFrame: Relative rates by grouping for each field in taxonomy
         """
-        # Group by year if specified
-        year_col = ["year"] if by_year else []
+        taxonomy_filter = (
+            f"WHERE {taxonomy} IN (SELECT UNNEST($taxonomy_values))" if taxonomy_values else ""
+        )
+        year = ["year"] if by_year else []
+        field_group_cols = [taxonomy, *grouping.grouping_columns, *year]
+        field_total_cols = [taxonomy, *year]
+        group_total_cols = [*grouping.grouping_columns, *year]
+        total_cols = [*year]
 
-        # Format column names nicely
-        if grouping == "race_ethnicity" or grouping == "gender":
-            label = f"within_{grouping}"
-            grouping_cols = [grouping]
-        elif grouping == "intersectional":
-            label = "intersectional"
-            grouping_cols = ["race_ethnicity", "gender"]
-        else:
-            raise ValueError(
-                f"Provided grouping {grouping} not allowed; allowed values are {self.groupings}"
-            )
-
-        # Populate and execute the query
-        base_columns = [taxonomy] + year_col
-        group_columns = grouping_cols + year_col
-        all_columns = [taxonomy] + grouping_cols + year_col
-        field_group_partition = "PARTITION BY " + ", ".join(all_columns)
-        field_partition = "PARTITION BY " + ", ".join(base_columns)
-        group_partition = "PARTITION BY " + ", ".join(group_columns)
-        total_partition = "PARTITION BY year" if by_year else ""
-
-        query = self.GROUP_FIELDS_QUERY.format(
-            completions_table=constants.COMPLETIONS_TABLE,
-            columns=", ".join(all_columns),
-            field_group_partition=field_group_partition,
-            field_partition=field_partition,
-            group_partition=group_partition,
-            total_partition=total_partition,
-            label=label,
+        query = self._format_query(
+            grouping=grouping,
+            agg_type="field",
+            field_group_cols=field_group_cols,
+            field_total_cols=field_total_cols,
+            group_total_cols=group_total_cols,
+            total_cols=total_cols,
+            taxonomy_filter=taxonomy_filter,
         )
         query_params = query_filters.model_dump()
         df = self.get_df_from_query(query, query_params=query_params)
 
         if rel_rate:
             # Calculate relative rate
-            field_pct = Rate("field_pct", f"field_degrees_{label}", "field_degrees_total")
-            uni_pct = Rate("uni_pct", f"uni_degrees_{label}", "uni_degrees_total")
+            field_pct = Rate(
+                "field_pct", f"field_degrees_{grouping.label_suffix}", "field_degrees_total"
+            )
+            uni_pct = Rate("uni_pct", f"uni_degrees_{grouping.label_suffix}", "uni_degrees_total")
             df = calculate_rel_rate(df, field_pct, uni_pct)
 
-        return df.set_index(all_columns)
+        return df.set_index(field_group_cols)
 
     def uni_rollup_by_grouping(
         self,
-        grouping: str,
+        grouping: Grouping,
         rollup: TaxonomyRollup,
         query_filters: QueryFilters,
         by_year: bool = False,
@@ -315,7 +268,7 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
         """Get intersectional degree counts and rates within intersectional subgroups"
 
         Args:
-            grouping (str): Either "race_ethnicity" or "gender"
+            grouping (Grouping): How to group the data
             rollup (TaxonomyRollup): Taxonomy to aggregate over
             query_filters (QueryFilters): Pre-aggregation filters
             by_year (bool): Whether to group by year (True) or aggregate over all years (False).
@@ -328,51 +281,41 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
             pd.DataFrame: Completions in fields contained within roll-up, aggregated by
                 university UNITID and chosen grouping, subject to filters
         """
-        if grouping == "race_ethnicity" or grouping == "gender":
-            label = f"within_{grouping}"
-            grouping_cols = [grouping]
-        elif grouping == "intersectional":
-            label = "intersectional"
-            grouping_cols = ["race_ethnicity", "gender"]
-        else:
-            raise ValueError(
-                f"Provided grouping {grouping} not allowed; allowed values are {self.groupings}"
-            )
-
         # Warn the user if rollup values are missing from the specified taxonomy
         self._check_rollup_values(rollup)
+        taxonomy_filter = f"WHERE {rollup.taxonomy_name} IN (SELECT UNNEST($taxonomy_values))"
+        year = ["year"] if by_year else []
+        field_group_cols = ["unitid", *grouping.grouping_columns, *year]
+        field_total_cols = ["unitid", *year]
+        group_total_cols = ["unitid", *grouping.grouping_columns, *year]
+        total_cols = ["unitid", *year]
 
-        # Format and execute query
-        year_col = ["year"] if by_year else []
-        base_columns = ["unitid"] + year_col
-        all_columns = ["unitid"] + grouping_cols + year_col
-
-        subtotal_partition = "PARTITION BY " + ", ".join(all_columns)
-        total_partition = "PARTITION BY " + ", ".join(base_columns)
-        query = self.UNI_GROUP_QUERY.format(
-            completions_table=constants.COMPLETIONS_TABLE,
-            institutions_table=constants.INSTITUTIONS_TABLE,
-            taxonomy=rollup.taxonomy_name,
-            columns=", ".join(all_columns),
-            label=label,
-            subtotal_partition=subtotal_partition,
-            total_partition=total_partition,
+        query = self._format_query(
+            grouping=grouping,
+            agg_type="rollup",
+            field_group_cols=field_group_cols,
+            field_total_cols=field_total_cols,
+            group_total_cols=group_total_cols,
+            total_cols=total_cols,
+            taxonomy_filter=taxonomy_filter,
         )
         query_params = query_filters.model_dump()
         query_params.update(rollup.model_dump(include={"taxonomy_values"}))
         df = self.get_df_from_query(query, query_params=query_params)
 
-        rollup_pct = Rate("rollup_pct", f"rollup_degrees_{label}", "rollup_degrees_total")
-        uni_pct = Rate("uni_pct", f"uni_degrees_{label}", "uni_degrees_total")
+        rollup_pct = Rate(
+            "rollup_pct", f"rollup_degrees_{grouping.label_suffix}", "rollup_degrees_total"
+        )
+        uni_pct = Rate("uni_pct", f"uni_degrees_{grouping.label_suffix}", "uni_degrees_total")
 
         if rel_rate or effect_size:
             # Calculate z-score for rollup field pct relative to baseline uni pct
             df = calculate_rel_rate(df, rollup_pct, uni_pct)
 
         if effect_size:
-            df = calculate_effect_size(df, rollup_pct, uni_pct, group_cols=all_columns[1:])
+            df = calculate_effect_size(df, rollup_pct, uni_pct, group_cols=field_group_cols[1:])
 
-        return df.set_index(all_columns)
+        return df.set_index(field_group_cols)
 
     def uni_field_totals_by_grouping(
         self,
@@ -389,7 +332,7 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
         within a given taxonomy at each university
 
         Args:
-            grouping (str): Either "race_ethnicity", "gender", or "intersectional
+            grouping (Grouping): Either "race_ethnicity", "gender", or "intersectional
             taxonomy (FieldTaxonomy): Taxonomy to aggregate over
             query_filters (QueryFilters): Pre-aggregation filters to apply to raw data
             taxonomy_values (list[str]): Optional list of field values to filter on. Default: None
@@ -406,16 +349,22 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
         taxonomy_filter = (
             f"WHERE {taxonomy} IN (SELECT UNNEST($taxonomy_values))" if taxonomy_values else ""
         )
+        year = ["year"] if by_year else []
+        field_group_cols = ["unitid", taxonomy, *grouping.grouping_columns, *year]
+        field_total_cols = ["unitid", taxonomy, *year]
+        group_total_cols = ["unitid", *grouping.grouping_columns, *year]
+        total_cols = ["unitid", *year]
 
-        query = self.UNI_GROUP_FIELDS_QUERY.format(
-            completions_table=constants.COMPLETIONS_TABLE,
-            institutions_table=constants.INSTITUTIONS_TABLE,
-            taxonomy=taxonomy,
+        query = self._format_query(
+            grouping=grouping,
+            agg_type="field",
+            field_group_cols=field_group_cols,
+            field_total_cols=field_total_cols,
+            group_total_cols=group_total_cols,
+            total_cols=total_cols,
             taxonomy_filter=taxonomy_filter,
-            grouping_columns=", ".join(grouping.grouping_columns),
-            label=grouping.label_suffix,
-            by_year=", year" if by_year else "",
         )
+
         query_params = query_filters.model_dump()
         if taxonomy_values:
             query_params["taxonomy_values"] = taxonomy_values
@@ -430,10 +379,7 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
         if rel_rate or effect_size:
             df = calculate_rel_rate(df, field_pct, uni_pct)
 
-        index_cols = ["unitid", taxonomy, *grouping.grouping_columns]
-        if by_year:
-            index_cols.append("year")
-
         if effect_size:
-            df = calculate_effect_size(df, field_pct, uni_pct, group_cols=index_cols[1:])
-        return df.set_index(index_cols)
+            df = calculate_effect_size(df, field_pct, uni_pct, group_cols=field_group_cols[1:])
+
+        return df.set_index(field_group_cols)
