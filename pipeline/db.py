@@ -7,7 +7,14 @@ import typer
 
 import pipeline.settings
 from pipeline.settings import logger
-from scipeds import constants
+from scipeds.constants import (
+    CIP_TABLE,
+    COMPLETIONS_TABLE,
+    DB_NAME,
+    END_YEAR,
+    INSTITUTIONS_TABLE,
+    START_YEAR,
+)
 from scipeds.data.enums import (
     AwardLevel,
     Gender,
@@ -26,7 +33,6 @@ def write_completions_to_db(
 ):
     """Read IPEDS data from interim CSVs into structured duckdb table"""
     enum_cols = [
-        "unitid",
         "awlevel",
         "race_ethnicity",
         "gender",
@@ -56,14 +62,14 @@ def write_completions_to_db(
     }
 
     create_query = f"""
-        CREATE TABLE {constants.COMPLETIONS_TABLE} AS (
+        CREATE TABLE {COMPLETIONS_TABLE} AS (
             SELECT * FROM read_csv('{str(completions_dir.resolve())}/*.csv.gz',
                 delim = ',',
                 header = true,
                 auto_detect = false,
                 columns = {{
                     'year': 'USMALLINT',
-                    'unitid': 'VARCHAR',
+                    'unitid': 'UINTEGER',
                     'cipcode': 'VARCHAR',
                     'awlevel': 'VARCHAR',
                     'majornum': 'UTINYINT',
@@ -81,50 +87,50 @@ def write_completions_to_db(
         );
     """
     if verbose:
-        logger.info(f"Reading interim CSVs into table {constants.COMPLETIONS_TABLE}")
+        logger.info(f"Reading interim CSVs into table {COMPLETIONS_TABLE}")
     con.execute(create_query)
 
     # Convert enumerated columns to enum type
     for col in enum_cols:
-        query = f"SELECT COUNT(DISTINCT {col}) FROM {constants.COMPLETIONS_TABLE}"
-        num_values = con.sql(query).df().values[0]
+        query = f"SELECT COUNT(DISTINCT {col}) FROM {COMPLETIONS_TABLE}"
+        num_values = con.sql(query).fetchall()[0][0]
         if verbose:
             logger.info(f"Creating enum {col}_enum with {num_values} unique values...")
         create_enum_stmt = f"""
             CREATE TYPE {col}_enum AS ENUM
-                (SELECT DISTINCT {col} FROM {constants.COMPLETIONS_TABLE} ORDER BY {col})
+                (SELECT DISTINCT {col} FROM {COMPLETIONS_TABLE} ORDER BY {col})
             """
         con.execute(create_enum_stmt)
-        alter_stmt = f"ALTER TABLE {constants.COMPLETIONS_TABLE} ALTER {col} TYPE {col}_enum"
+        alter_stmt = f"ALTER TABLE {COMPLETIONS_TABLE} ALTER {col} TYPE {col}_enum"
         con.execute(alter_stmt)
 
     # Create enumerated columns where we want the enumerated values
     # to span multiple "original" columns
     for enum_name, cols in combined_enum_cols.items():
-        subqueries = [f"SELECT DISTINCT {col} FROM {constants.COMPLETIONS_TABLE}" for col in cols]
+        subqueries = [f"SELECT DISTINCT {col} FROM {COMPLETIONS_TABLE}" for col in cols]
         subquery = " UNION ".join(subqueries)
         query = f"SELECT DISTINCT(*) AS {enum_name} FROM ({subquery}) ORDER BY {enum_name}"
-        num_values = con.sql(query).df().values[0]
+        num_values = con.sql(f"SELECT COUNT(*) from ({query})").fetchall()[0][0]
         if verbose:
             logger.info(f"Creating enum {enum_name} with {num_values} values from cols {cols}")
         create_enum_stmt = f"CREATE TYPE {enum_name} AS ENUM ({query})"
         con.execute(create_enum_stmt)
         for col in cols:
-            alter_stmt = f"ALTER TABLE {constants.COMPLETIONS_TABLE} ALTER {col} TYPE {enum_name}"
+            alter_stmt = f"ALTER TABLE {COMPLETIONS_TABLE} ALTER {col} TYPE {enum_name}"
             con.execute(alter_stmt)
 
     # Add column descriptions
     for col, desc in descriptions.items():
-        con.execute(f"COMMENT ON COLUMN {constants.COMPLETIONS_TABLE}.{col} IS '{desc}'")
+        con.execute(f"COMMENT ON COLUMN {COMPLETIONS_TABLE}.{col} IS '{desc}'")
 
     if verbose:
-        n_rows = con.sql(f"SELECT COUNT(*) FROM {constants.COMPLETIONS_TABLE}").df().values[0]
-        logger.info(f"Created table {constants.COMPLETIONS_TABLE} with {n_rows[0]:,} rows.")
-        logger.info(con.sql(f"DESCRIBE {constants.COMPLETIONS_TABLE}"))
+        n_rows = con.sql(f"SELECT COUNT(*) FROM {COMPLETIONS_TABLE}").df().values[0]
+        logger.info(f"Created table {COMPLETIONS_TABLE} with {n_rows[0]:,} rows.")
+        logger.info(f"\n{con.sql(f'DESCRIBE {COMPLETIONS_TABLE}')}")
         logger.info("Creating table with CIP codes...")
 
     # Create CIP table
-    con.sql(f"""CREATE TABLE {constants.CIP_TABLE} AS 
+    con.sql(f"""CREATE TABLE {CIP_TABLE} AS 
     (
         SELECT DISTINCT ON (cip2020)
             cip2020,
@@ -134,22 +140,22 @@ def write_completions_to_db(
             ncses_detailed_field_group,
             nsf_broad_field,
             dhs_stem
-        FROM {constants.COMPLETIONS_TABLE}
+        FROM {COMPLETIONS_TABLE}
     );
     """)
 
-    con.sql(f"ALTER TABLE {constants.COMPLETIONS_TABLE} DROP COLUMN cip_title")
+    con.sql(f"ALTER TABLE {COMPLETIONS_TABLE} DROP COLUMN cip_title")
 
-    n_rows = con.sql(f"SELECT COUNT(*) FROM {constants.CIP_TABLE}").df().values[0]
+    n_rows = con.sql(f"SELECT COUNT(*) FROM {CIP_TABLE}").df().values[0]
     if verbose:
-        logger.info(f"Created table {constants.CIP_TABLE} with {n_rows[0]:,} rows.")
-        logger.info(con.sql(f"DESCRIBE {constants.CIP_TABLE}"))
+        logger.info(f"Created table {CIP_TABLE} with {n_rows[0]:,} rows.")
+        logger.info(f"\n{con.sql(f'DESCRIBE {CIP_TABLE}')}")
 
 
 def write_institutions_to_db(con: duckdb.DuckDBPyConnection, dir: Path, verbose: bool = True):
     """Read institution metadata CSV to a table"""
     create_query = f"""
-        CREATE OR REPLACE TABLE {constants.INSTITUTIONS_TABLE} AS (
+        CREATE OR REPLACE TABLE {INSTITUTIONS_TABLE} AS (
             SELECT * FROM read_csv('{str(dir.resolve())}/*.csv.gz',
                 delim = ',',
                 header = true,
@@ -158,17 +164,18 @@ def write_institutions_to_db(con: duckdb.DuckDBPyConnection, dir: Path, verbose:
         );
     """
     con.execute(create_query)
+    con.execute(f"ALTER TABLE {INSTITUTIONS_TABLE} ALTER unitid TYPE INTEGER")
     if verbose:
-        n_rows = con.sql(f"SELECT COUNT(*) FROM {constants.INSTITUTIONS_TABLE}").fetchall()[0][0]
+        n_rows = con.sql(f"SELECT COUNT(*) FROM {INSTITUTIONS_TABLE}").fetchall()[0][0]
         logger.info(f"Created table institution meta with {n_rows:,} rows.")
-        logger.info(con.sql(f"DESCRIBE {constants.INSTITUTIONS_TABLE}"))
+        logger.info(f"\n{con.sql(f'DESCRIBE {INSTITUTIONS_TABLE}')}")
 
 
 @app.command()
 def write_db(
-    output_file: Path = pipeline.settings.PROCESSED_DATA_DIR / constants.DB_NAME,
-    completions_dir: Path = pipeline.settings.INTERIM_DATA_DIR / constants.COMPLETIONS_TABLE,
-    institutions_dir: Path = pipeline.settings.INTERIM_DATA_DIR / constants.INSTITUTIONS_TABLE,
+    output_file: Path = pipeline.settings.PROCESSED_DATA_DIR / DB_NAME,
+    completions_dir: Path = pipeline.settings.INTERIM_DATA_DIR / COMPLETIONS_TABLE,
+    institutions_dir: Path = pipeline.settings.INTERIM_DATA_DIR / INSTITUTIONS_TABLE,
     overwrite: bool = False,
     verbose: bool = True,
 ):
@@ -192,7 +199,7 @@ def write_db(
 def create_test_record(race_ethnicity: RaceEthn, gender: Gender, n_awards: int, **kwargs):
     """Create a completions db record for testing purposes"""
     record = dict(
-        year=kwargs.get("year", constants.END_YEAR),
+        year=kwargs.get("year", END_YEAR),
         unitid=kwargs.get("unitid", "1"),
         cipcode=kwargs.get("cipcode", "00.0000"),
         awlevel=kwargs.get("award_level", AwardLevel.bachelors.value),
@@ -233,8 +240,8 @@ def fake_completions_data() -> pd.DataFrame:
     - assume 1 person in every sub-bucket
 
     """
-    unitids = ["1", "2"]
-    years = [constants.START_YEAR, constants.END_YEAR]
+    unitids = [1, 2]
+    years = [START_YEAR, END_YEAR]
     genders = [Gender.women, Gender.men]
     race_ethns = [RaceEthn.black_or_aa, RaceEthn.asian, RaceEthn.hispanic]
     sgs = [NCSESSciGroup.sci, NCSESSciGroup.non_sci, NCSESSciGroup.unknown]

@@ -73,6 +73,14 @@ class QueryEngineTests(unittest.TestCase):
         ]
         self.assertCountEqual(returned_cip_titles, expected_cip_titles)
 
+    def test_institution_characteristics_query(self):
+        inst_table = self.engine.get_institutions_table()
+        assert not inst_table.empty
+
+        returned_unitids = inst_table.index
+        expected_unitids = [1, 2]
+        self.assertCountEqual(returned_unitids, expected_unitids)
+
     def test_rollup_check(self):
         good_rollup = TaxonomyRollup(
             taxonomy_name=FieldTaxonomy.ncses_sci_group, taxonomy_values=NCSESSciGroup.sci
