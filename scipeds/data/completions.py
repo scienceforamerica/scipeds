@@ -127,8 +127,8 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
             group_total_cols, f"uni_degrees_{grouping.label_suffix}", "group_totals"
         )
         t_var, t_join = format_join(total_cols, "uni_degrees_total", "totals")
-        joins = list(sorted([ft_join, gt_join, t_join], reverse=True))
-        joins = "\n".join(joins)
+        all_joins = list(sorted([ft_join, gt_join, t_join], reverse=True))
+        joins = "\n".join(all_joins)
 
         query = self.GROUP_FIELDS_QUERY.format(
             completions_table=COMPLETIONS_TABLE,
