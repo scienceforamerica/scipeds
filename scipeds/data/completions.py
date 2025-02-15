@@ -101,44 +101,42 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
             AND awlevel IN (SELECT UNNEST($award_levels))
             AND majornum IN (SELECT UNNEST($majornums))
     ), uni_field_group_totals AS (
-        SELECT unitid, {taxonomy}, {columns}
+        SELECT unitid, {taxonomy}, {grouping_columns} {by_year}
             ,COALESCE(SUM(n_awards), 0)::INT64 AS field_degrees_{label}
-        FROM filtered
-        {taxonomy_filter}
-        GROUP BY unitid, {taxonomy}, {columns}
+        FROM filtered {taxonomy_filter}
+        GROUP BY unitid, {taxonomy}, {grouping_columns} {by_year}
     ), uni_field_totals AS (
-        SELECT unitid, {taxonomy} {year}
+        SELECT unitid, {taxonomy} {by_year}
             ,COALESCE(SUM(n_awards), 0)::INT64 AS field_degrees_total
-        FROM filtered
-        {taxonomy_filter}
-        GROUP BY unitid, {taxonomy} {year}
+        FROM filtered {taxonomy_filter}
+        GROUP BY unitid, {taxonomy} {by_year}
     ), uni_group_totals AS (
-        SELECT unitid, {columns}
+        SELECT unitid, {grouping_columns} {by_year}
             ,COALESCE(SUM(n_awards), 0)::INT64 AS uni_degrees_{label}
         FROM filtered
-        GROUP BY unitid, {columns}
+        GROUP BY unitid, {grouping_columns} {by_year}
     ), uni_totals AS (
-        SELECT unitid {year}
+        SELECT unitid {by_year}
             ,COALESCE(SUM(n_awards), 0)::INT64 AS uni_degrees_total
         FROM filtered
-        GROUP BY unitid {year}
+        GROUP BY unitid {by_year}
     )
     SELECT
         unitid, 
         {taxonomy}, 
-        {columns},
+        {grouping_columns} {by_year},
         field_degrees_{label}, 
         field_degrees_total,
         uni_degrees_{label},
         uni_degrees_total
     FROM uni_field_group_totals ufgt
     LEFT JOIN uni_field_totals uft 
-        USING (unitid, {taxonomy} {year})
+        USING (unitid, {taxonomy} {by_year})
     LEFT JOIN uni_group_totals ugt 
-        USING (unitid, {columns}) 
+        USING (unitid, {grouping_columns} {by_year}) 
     JOIN uni_totals ut 
-        USING (unitid {year})
-    ORDER BY unitid, {taxonomy}, {columns};
+        USING (unitid {by_year})
+    ORDER BY unitid, {taxonomy}, {grouping_columns} {by_year};
     """
 
     def __init__(self, db_path: Optional[Path] = constants.SCIPEDS_CACHE_DIR / constants.DB_NAME):
@@ -234,9 +232,9 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
 
         # Calculate relative rate
         if rel_rate:
-            stem_pct = Rate("field_pct", f"rollup_degrees_{label}", "rollup_degrees_total")
+            rollup_pct = Rate("rollup_pct", f"rollup_degrees_{label}", "rollup_degrees_total")
             uni_pct = Rate("uni_pct", f"uni_degrees_{label}", "uni_degrees_total")
-            df = calculate_rel_rate(df, stem_pct, uni_pct)
+            df = calculate_rel_rate(df, rollup_pct, uni_pct)
 
         return df.set_index(col_select)
 
@@ -364,15 +362,15 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
         query_params.update(rollup.model_dump(include={"taxonomy_values"}))
         df = self.get_df_from_query(query, query_params=query_params)
 
-        stem_pct = Rate("stem_pct", f"rollup_degrees_{label}", "rollup_degrees_total")
+        rollup_pct = Rate("rollup_pct", f"rollup_degrees_{label}", "rollup_degrees_total")
         uni_pct = Rate("uni_pct", f"uni_degrees_{label}", "uni_degrees_total")
 
         if rel_rate or effect_size:
             # Calculate z-score for rollup field pct relative to baseline uni pct
-            df = calculate_rel_rate(df, stem_pct, uni_pct)
+            df = calculate_rel_rate(df, rollup_pct, uni_pct)
 
         if effect_size:
-            df = calculate_effect_size(df, stem_pct, uni_pct, group_cols=all_columns[1:])
+            df = calculate_effect_size(df, rollup_pct, uni_pct, group_cols=all_columns[1:])
 
         return df.set_index(all_columns)
 
@@ -405,10 +403,6 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
             pd.DataFrame: Completions in each field in the taxonomy, aggregated by
                 university UNITID and chosen grouping, subject to filters
         """
-        label = grouping.label_suffix
-        columns = grouping.grouping_columns
-        if by_year:
-            columns.append("year")
         taxonomy_filter = (
             f"WHERE {taxonomy} IN (SELECT UNNEST($taxonomy_values))" if taxonomy_values else ""
         )
@@ -418,9 +412,9 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
             institutions_table=constants.INSTITUTIONS_TABLE,
             taxonomy=taxonomy,
             taxonomy_filter=taxonomy_filter,
-            columns=", ".join(columns),
-            label=label,
-            year=", year" if by_year else "",
+            grouping_columns=", ".join(grouping.grouping_columns),
+            label=grouping.label_suffix,
+            by_year=", year" if by_year else "",
         )
         query_params = query_filters.model_dump()
         if taxonomy_values:
@@ -428,14 +422,18 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
 
         df = self.get_df_from_query(query, query_params=query_params, show_query=show_query)
 
-        field_pct = Rate("field_pct", f"field_degrees_{label}", "field_degrees_total")
-        uni_pct = Rate("uni_pct", f"uni_degrees_{label}", "uni_degrees_total")
+        field_pct = Rate(
+            "field_pct", f"field_degrees_{grouping.label_suffix}", "field_degrees_total"
+        )
+        uni_pct = Rate("uni_pct", f"uni_degrees_{grouping.label_suffix}", "uni_degrees_total")
 
         if rel_rate or effect_size:
             df = calculate_rel_rate(df, field_pct, uni_pct)
 
-        index_cols = ["unitid", taxonomy, *columns]
+        index_cols = ["unitid", taxonomy, *grouping.grouping_columns]
+        if by_year:
+            index_cols.append("year")
+
         if effect_size:
             df = calculate_effect_size(df, field_pct, uni_pct, group_cols=index_cols[1:])
-
         return df.set_index(index_cols)
