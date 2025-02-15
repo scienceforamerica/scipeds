@@ -2,10 +2,9 @@
 
 -r lint.txt
 -r docs.txt
+-r ../pipeline/requirements.txt
 
 build
-loguru
 pip-tools
 pytest
-requests
 twine

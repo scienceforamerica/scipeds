@@ -8,17 +8,12 @@ version = "0.0.3"
 dependencies = [
   "cloudpathlib[gs]",
   "duckdb",
-  "lxml",
   "numpy",
-  "openpyxl",
   "pandas",
   "platformdirs",
   "pydantic",
-  "python-dotenv",
   "statsmodels",
-  "tqdm",
   "typer",
-  "xlrd",
 ]
 description = "A Python package for working with IPEDS data"
 authors = [

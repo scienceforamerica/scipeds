@@ -131,7 +131,7 @@ class IPEDSCompletionsReader:
         if "majornum" not in df.columns:
             # If it doesn't, assume all reported majors are first majors
             if verbose:
-                logger.info("MAJORNUM column not found, assuming all majors are first majors.")
+                logger.warning("MAJORNUM column not found, assuming all majors are first majors.")
             df["majornum"] = 1
         else:
             df["majornum"] = df["majornum"].astype(int)
@@ -181,14 +181,14 @@ class IPEDSCompletionsReader:
             col_map = POST_2010_CRACE_CODES
 
         # Stack race/gender into columns to make tidy
+        df = df[list(col_map.keys())]
+        df.columns = df.columns.map(col_map)
+        df.columns.rename(["race_ethnicity", "gender"], inplace=True)
         if verbose:
             logger.info(
                 f"Stacking table with {df.shape[0]:,} rows and {df.shape[1]:,} cols "
                 f"into tidy format with {df.shape[0] * df.shape[1]:,} rows"
             )
-        df = df[list(col_map.keys())]
-        df.columns = df.columns.map(col_map)
-        df.columns.rename(["race_ethnicity", "gender"], inplace=True)
         series = pd.Series(df.stack([0, 1], future_stack=True))
 
         # It's a series now so we can rename it

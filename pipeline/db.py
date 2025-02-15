@@ -167,7 +167,7 @@ def write_institutions_to_db(con: duckdb.DuckDBPyConnection, dir: Path, verbose:
     con.execute(f"ALTER TABLE {INSTITUTIONS_TABLE} ALTER unitid TYPE INTEGER")
     if verbose:
         n_rows = con.sql(f"SELECT COUNT(*) FROM {INSTITUTIONS_TABLE}").fetchall()[0][0]
-        logger.info(f"Created table institution meta with {n_rows:,} rows.")
+        logger.info(f"Created table {INSTITUTIONS_TABLE} with {n_rows:,} rows.")
         logger.info(f"\n{con.sql(f'DESCRIBE {INSTITUTIONS_TABLE}')}")
 
 
@@ -222,7 +222,10 @@ def create_test_record(race_ethnicity: RaceEthn, gender: Gender, n_awards: int, 
 
 def fake_institution_data() -> pd.DataFrame:
     """Construct fake institution data for testing purposes"""
-    data = [{"unitid": "1", "name": "University 1"}, {"unitid": "2", "name": "University 2"}]
+    data = [
+        {"unitid": "1", "institution_name": "University 1"},
+        {"unitid": "2", "institution_name": "University 2"},
+    ]
     meta = pd.DataFrame.from_records(data)
     return meta
 

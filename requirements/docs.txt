@@ -1,7 +1,6 @@
 -e .
 
 griffe-pydantic
-loguru
 mkdocs
 mkdocs-gen-files
 mkdocs-jupyter
