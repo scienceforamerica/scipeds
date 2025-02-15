@@ -67,7 +67,9 @@ class Grouping(str, Enum):
     @enum_property
     def grouping_columns(self) -> list[str]:
         return (
-            [self.value] if self is not self.intersectional else [self.race_ethnicity, self.gender]
+            [self.value]
+            if self is not self.intersectional
+            else [self.race_ethnicity.value, self.gender.value]  # type: ignore
         )
 
 

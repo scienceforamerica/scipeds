@@ -15,37 +15,56 @@ from scipeds.utils import (
 
 class CompletionsQueryEngine(IPEDSQueryEngine):
     GROUP_FIELDS_QUERY = """
-    WITH filtered AS (
-        SELECT * FROM {completions_table}
-        WHERE 
-            year BETWEEN $start_year AND $end_year
-            AND race_ethnicity IN (SELECT UNNEST($race_ethns))
-            AND awlevel IN (SELECT UNNEST($award_levels))
-            AND majornum IN (SELECT UNNEST($majornums))
-    ), 
-    field_group_totals AS (
-        {field_group_total_select}
-    ), 
-    field_totals AS (
-        {field_total_select}
-    ), 
-    group_totals AS (
-        {group_total_select}
-    ), 
-    totals AS (
-        {total_select}
-    )
-    SELECT
-        {field_group_cols},
-        {field_group_degrees},
-        {field_total_degrees},
-        {group_total_degrees},
-        {total_degrees},
-    FROM field_group_totals
-        {joins}
-     
-    ORDER BY {field_group_cols}; 
-    """
+WITH filtered AS (
+    SELECT * FROM {completions_table}
+    WHERE 
+        year BETWEEN $start_year AND $end_year
+        AND race_ethnicity IN (SELECT UNNEST($race_ethns))
+        AND awlevel IN (SELECT UNNEST($award_levels))
+        AND majornum IN (SELECT UNNEST($majornums))
+), 
+field_group_totals AS (
+    {field_group_total_select}
+), 
+field_totals AS (
+    {field_total_select}
+), 
+group_totals AS (
+    {group_total_select}
+), 
+totals AS (
+    {total_select}
+)
+SELECT
+    {field_group_cols},
+    {field_group_degrees},
+    {field_total_degrees},
+    {group_total_degrees},
+    {total_degrees},
+FROM field_group_totals
+{joins}
+ORDER BY {field_group_cols};"""
+
+    def _validate_inputs(
+        self, grouping: Grouping | None = None, taxonomy: FieldTaxonomy | None = None
+    ):
+        """Validate the inputs to the query engine
+
+        Args:
+            grouping (Grouping): How to group the data
+            taxonomy (FieldTaxonomy): Taxonomy to aggregate over
+        """
+        if grouping is not None and not isinstance(grouping, Grouping):
+            try:
+                grouping = Grouping(grouping)
+            except ValueError:
+                raise ValueError(f"Invalid grouping {grouping} specified")
+        if taxonomy is not None and not isinstance(taxonomy, FieldTaxonomy):
+            try:
+                taxonomy = FieldTaxonomy(taxonomy)
+            except ValueError:
+                raise ValueError(f"Invalid taxonomy {taxonomy} specified")
+        return grouping, taxonomy
 
     def _check_rollup_values(self, rollup: TaxonomyRollup):
         """Check whether the rollup values provided exist in the specified taxonomy, and warn
@@ -92,11 +111,12 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
         """
 
         def format_subquery(cols: list[str], name: str, filter: str = "") -> str:
-            selection = ",".join(cols) + "," if cols else ""
-            groupby = f"GROUP BY {','.join(cols)}" if cols else ""
-            return f"""SELECT {selection} COALESCE(SUM(n_awards), 0)::INT64 AS {name}
-                FROM filtered {filter}
-                {groupby}"""
+            selection = ", ".join(cols) + "," if cols else ""
+            groupby = f"GROUP BY {', '.join(cols)}" if cols else ""
+            return f"""SELECT {selection} 
+        COALESCE(SUM(n_awards), 0)::INT64 AS {name}
+    FROM filtered {filter}
+    {groupby}"""
 
         field_group_total_select = format_subquery(
             field_group_cols, f"{agg_type}_degrees_{grouping.label_suffix}", taxonomy_filter
@@ -111,7 +131,7 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
 
         def format_join(cols: list[str], var_name: str, table_name: str) -> tuple[str, str]:
             if cols:
-                join_str = f"LEFT JOIN {table_name} USING ({','.join(cols)})"
+                join_str = f"LEFT JOIN {table_name} USING ({', '.join(cols)})"
             else:
                 var_name = f"{table_name}.{var_name}"
                 join_str = f",{table_name}"
@@ -132,7 +152,7 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
 
         query = self.GROUP_FIELDS_QUERY.format(
             completions_table=COMPLETIONS_TABLE,
-            field_group_cols=",".join(field_group_cols),
+            field_group_cols=", ".join(field_group_cols),
             field_group_total_select=field_group_total_select,
             field_total_select=field_total_select,
             group_total_select=group_total_select,
@@ -153,6 +173,7 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
         query_filters: QueryFilters,
         by_year: bool = False,
         rel_rate: bool = False,
+        show_query: bool = False,
     ) -> pd.DataFrame:
         """Aggregate completions (subject to filters) for fields within the given roll-up,
         aggregating by selected grouping and subject to the applied filters
@@ -165,11 +186,13 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
                 Default: False
             rel_rate (bool): Whether to calculate relative representation. If true,
                 also adds associated variables. Default: False
-
+            show_query (bool): Whether to print the query and parameters before executing.
+                Default: False
         Returns:
             pd.DataFrame: Completions within fields in the roll-up,
                 aggregated by chosen grouping and subject to filters
         """
+        grouping, _ = self._validate_inputs(grouping=grouping)
         # Warn the user if rollup values are missing from the specified taxonomy
         self._check_rollup_values(rollup)
         taxonomy_filter = f"WHERE {rollup.taxonomy_name} IN (SELECT UNNEST($taxonomy_values))"
@@ -191,7 +214,7 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
         )
         query_params = query_filters.model_dump()
         query_params.update(rollup.model_dump(include={"taxonomy_values"}))
-        df = self.get_df_from_query(query, query_params=query_params)
+        df = self.get_df_from_query(query, query_params=query_params, show_query=show_query)
 
         # Calculate relative rate
         if rel_rate:
@@ -211,6 +234,7 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
         taxonomy_values: list[str] | None = None,
         by_year: bool = False,
         rel_rate: bool = False,
+        show_query: bool = False,
     ) -> pd.DataFrame:
         """Compute aggregate counts for all fields in a given taxonomy
 
@@ -221,16 +245,19 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
             by_year (bool): Whether to group by year (True) or aggregate over all years (False).
                 Default: False
             rel_rate (bool): Whether to calculate relative representation. Default: False
+            show_query (bool): Whether to print the query and parameters before executing.
+                Default: False
 
         Returns:
             pd.DataFrame: Relative rates by grouping for each field in taxonomy
         """
+        grouping, taxonomy = self._validate_inputs(grouping=grouping, taxonomy=taxonomy)
         taxonomy_filter = (
             f"WHERE {taxonomy} IN (SELECT UNNEST($taxonomy_values))" if taxonomy_values else ""
         )
         year = ["year"] if by_year else []
-        field_group_cols = [taxonomy, *grouping.grouping_columns, *year]
-        field_total_cols = [taxonomy, *year]
+        field_group_cols = [taxonomy.value, *grouping.grouping_columns, *year]
+        field_total_cols = [taxonomy.value, *year]
         group_total_cols = [*grouping.grouping_columns, *year]
         total_cols = [*year]
 
@@ -244,7 +271,7 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
             taxonomy_filter=taxonomy_filter,
         )
         query_params = query_filters.model_dump()
-        df = self.get_df_from_query(query, query_params=query_params)
+        df = self.get_df_from_query(query, query_params=query_params, show_query=show_query)
 
         if rel_rate:
             # Calculate relative rate
@@ -264,6 +291,7 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
         by_year: bool = False,
         rel_rate: bool = False,
         effect_size: bool = False,
+        show_query: bool = False,
     ) -> pd.DataFrame:
         """Get intersectional degree counts and rates within intersectional subgroups"
 
@@ -276,13 +304,18 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
             rel_rate (bool): Whether to calculate relative representation. If true,
                 also adds associated variables. Default: False
             effect_size (bool): Whether to compute effect size. Default: False
+            show_query (bool): Whether to print the query and parameters before executing.
+                Default: False
 
         Returns:
             pd.DataFrame: Completions in fields contained within roll-up, aggregated by
                 university UNITID and chosen grouping, subject to filters
         """
         # Warn the user if rollup values are missing from the specified taxonomy
+        grouping, _ = self._validate_inputs(grouping=grouping)
+
         self._check_rollup_values(rollup)
+
         taxonomy_filter = f"WHERE {rollup.taxonomy_name} IN (SELECT UNNEST($taxonomy_values))"
         year = ["year"] if by_year else []
         field_group_cols = ["unitid", *grouping.grouping_columns, *year]
@@ -301,7 +334,7 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
         )
         query_params = query_filters.model_dump()
         query_params.update(rollup.model_dump(include={"taxonomy_values"}))
-        df = self.get_df_from_query(query, query_params=query_params)
+        df = self.get_df_from_query(query, query_params=query_params, show_query=show_query)
 
         rollup_pct = Rate(
             "rollup_pct", f"rollup_degrees_{grouping.label_suffix}", "rollup_degrees_total"
@@ -332,7 +365,7 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
         within a given taxonomy at each university
 
         Args:
-            grouping (Grouping): Either "race_ethnicity", "gender", or "intersectional
+            grouping (Grouping): How to group the data
             taxonomy (FieldTaxonomy): Taxonomy to aggregate over
             query_filters (QueryFilters): Pre-aggregation filters to apply to raw data
             taxonomy_values (list[str]): Optional list of field values to filter on. Default: None
@@ -341,17 +374,21 @@ class CompletionsQueryEngine(IPEDSQueryEngine):
             rel_rate (bool): Whether to calculate relative representation. If true,
                 also adds associated variables. Default: False
             effect_size (bool): Whether to compute effect size. Default: False
+            show_query (bool): Whether to print the query and parameters before executing.
+                Default: False
 
         Returns:
             pd.DataFrame: Completions in each field in the taxonomy, aggregated by
                 university UNITID and chosen grouping, subject to filters
         """
+        grouping, taxonomy = self._validate_inputs(grouping=grouping, taxonomy=taxonomy)
+
         taxonomy_filter = (
             f"WHERE {taxonomy} IN (SELECT UNNEST($taxonomy_values))" if taxonomy_values else ""
         )
         year = ["year"] if by_year else []
-        field_group_cols = ["unitid", taxonomy, *grouping.grouping_columns, *year]
-        field_total_cols = ["unitid", taxonomy, *year]
+        field_group_cols = ["unitid", taxonomy.value, *grouping.grouping_columns, *year]
+        field_total_cols = ["unitid", taxonomy.value, *year]
         group_total_cols = ["unitid", *grouping.grouping_columns, *year]
         total_cols = ["unitid", *year]
 

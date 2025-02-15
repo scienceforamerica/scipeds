@@ -42,6 +42,8 @@ class IPEDSQueryEngine:
         Returns:
             pd.DataFrame: Data returned by query
         """
+        if show_query:
+            print(f"Query: {query}, Params: {query_params}")
         with duckdb.connect(self.db_path, read_only=True) as con:
             if query_params is not None:
                 df = con.execute(query, query_params).df()
