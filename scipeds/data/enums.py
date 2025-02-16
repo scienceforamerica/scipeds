@@ -1,8 +1,8 @@
-from enum import Enum
+from enum import StrEnum
 from enum import property as enum_property
 
 
-class Gender(str, Enum):
+class Gender(StrEnum):
     """Enumeration for gender.
 
     Note that [IPEDS reports gender as binary](
@@ -17,7 +17,7 @@ class Gender(str, Enum):
     women = "women"
 
 
-class RaceEthn(str, Enum):
+class RaceEthn(StrEnum):
     """Enumeration for race/ethnicity
 
     Note that the categories "Two or more races" and "Native Hawaiian or Other Pacific Islander"
@@ -51,7 +51,7 @@ class RaceEthn(str, Enum):
     unknown = "Unknown"
 
 
-class Grouping(str, Enum):
+class Grouping(StrEnum):
     gender = "gender"
     race_ethnicity = "race_ethnicity"
     intersectional = "intersectional"
@@ -73,7 +73,7 @@ class Grouping(str, Enum):
         )
 
 
-class AwardLevel(str, Enum):
+class AwardLevel(StrEnum):
     """Enumeration for award level
 
     Note that in 2011, award level codes changed. The `scipeds` pipeline attempts
@@ -113,7 +113,7 @@ class AwardLevel(str, Enum):
     unknown = "Unknown"
 
 
-class InstitutionProperty(str, Enum):
+class InstitutionProperty(StrEnum):
     tech_school = "Tech school"
     health_school = "Health school"
     carnegie_classification_2021_basic = "Carnegie classification"
@@ -121,7 +121,7 @@ class InstitutionProperty(str, Enum):
     historically_black_college_or_university = "HBCU"
 
 
-class FieldTaxonomy(str, Enum):
+class FieldTaxonomy(StrEnum):
     """Enumeration for field taxonomy.
 
     The values in this enumeration also correspond to columns in the pre-processed database
@@ -152,12 +152,8 @@ class FieldTaxonomy(str, Enum):
     nsf_broad_field = "nsf_broad_field"
     dhs_stem = "dhs_stem"
 
-    def __format__(self, fmt):
-        # Python 3.11 treatment of StrEnum requires overwriting formatting
-        return self.value
 
-
-class NCSESSciGroup(str, Enum):
+class NCSESSciGroup(StrEnum):
     """Field values for the [NCSES Science & Engineering Alternate Classification](
             https://ncsesdata.nsf.gov/sere/2018/html/sere18-dt-taba001.html)
 
@@ -173,7 +169,7 @@ class NCSESSciGroup(str, Enum):
     unknown = "Not categorized in NCSES crosswalk"
 
 
-class NCSESFieldGroup(str, Enum):
+class NCSESFieldGroup(StrEnum):
     """Field values for the [NCSES Broad Field Alternate Classification](
             https://ncsesdata.nsf.gov/sere/2018/html/sere18-dt-taba001.html)
 
@@ -227,7 +223,7 @@ class NCSESFieldGroup(str, Enum):
     unknown = "Not categorized in NCSES crosswalk"
 
 
-class NCSESDetailedFieldGroup(str, Enum):
+class NCSESDetailedFieldGroup(StrEnum):
     """Field values for the [NCSES Detailed Field Alternate Classification](
             https://ncsesdata.nsf.gov/sere/2018/html/sere18-dt-taba001.html)
 
@@ -345,7 +341,7 @@ class NCSESDetailedFieldGroup(str, Enum):
     unknown = "Not categorized in NCSES crosswalk"
 
 
-class NSFBroadField(str, Enum):
+class NSFBroadField(StrEnum):
     """Field values according to the [NSF Diversity in STEM Report](
             https://ncses.nsf.gov/pubs/nsf23315/report)
 
