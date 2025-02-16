@@ -41,6 +41,8 @@ googleapis-common-protos==1.67.0
     # via google-api-core
 idna==3.10
     # via requests
+loguru==0.7.3
+    # via -r pipeline/requirements.in
 lxml==5.3.1
     # via -r pipeline/requirements.in
 markdown-it-py==3.0.0

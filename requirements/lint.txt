@@ -1,6 +1,7 @@
 -e .
 
-loguru
+-r ../pipeline/requirements.txt
+
 mypy
 pandas-stubs
 ruff

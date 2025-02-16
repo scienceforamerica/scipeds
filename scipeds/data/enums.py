@@ -1,8 +1,7 @@
-from enum import StrEnum
-from enum import property as enum_property
+from enum import Enum
 
 
-class Gender(StrEnum):
+class Gender(str, Enum):
     """Enumeration for gender.
 
     Note that [IPEDS reports gender as binary](
@@ -17,7 +16,7 @@ class Gender(StrEnum):
     women = "women"
 
 
-class RaceEthn(StrEnum):
+class RaceEthn(str, Enum):
     """Enumeration for race/ethnicity
 
     Note that the categories "Two or more races" and "Native Hawaiian or Other Pacific Islander"
@@ -51,20 +50,20 @@ class RaceEthn(StrEnum):
     unknown = "Unknown"
 
 
-class Grouping(StrEnum):
+class Grouping(str, Enum):
     gender = "gender"
     race_ethnicity = "race_ethnicity"
     intersectional = "intersectional"
 
-    @enum_property
+    @property
     def label_suffix(self) -> str:
         return f"within_{self.value}" if self is not self.intersectional else self.value
 
-    @enum_property
+    @property
     def students_suffix(self) -> str:
         return "students" if self is self.intersectional else ""
 
-    @enum_property
+    @property
     def grouping_columns(self) -> list[str]:
         return (
             [self.value]
@@ -73,7 +72,7 @@ class Grouping(StrEnum):
         )
 
 
-class AwardLevel(StrEnum):
+class AwardLevel(str, Enum):
     """Enumeration for award level
 
     Note that in 2011, award level codes changed. The `scipeds` pipeline attempts
@@ -113,7 +112,7 @@ class AwardLevel(StrEnum):
     unknown = "Unknown"
 
 
-class InstitutionProperty(StrEnum):
+class InstitutionProperty(str, Enum):
     tech_school = "Tech school"
     health_school = "Health school"
     carnegie_classification_2021_basic = "Carnegie classification"
@@ -121,7 +120,7 @@ class InstitutionProperty(StrEnum):
     historically_black_college_or_university = "HBCU"
 
 
-class FieldTaxonomy(StrEnum):
+class FieldTaxonomy(str, Enum):
     """Enumeration for field taxonomy.
 
     The values in this enumeration also correspond to columns in the pre-processed database
@@ -152,8 +151,12 @@ class FieldTaxonomy(StrEnum):
     nsf_broad_field = "nsf_broad_field"
     dhs_stem = "dhs_stem"
 
+    def __format__(self, fmt):
+        # Python 3.11 treatment of StrEnum requires overwriting formatting
+        return self.value
 
-class NCSESSciGroup(StrEnum):
+
+class NCSESSciGroup(str, Enum):
     """Field values for the [NCSES Science & Engineering Alternate Classification](
             https://ncsesdata.nsf.gov/sere/2018/html/sere18-dt-taba001.html)
 
@@ -169,7 +172,7 @@ class NCSESSciGroup(StrEnum):
     unknown = "Not categorized in NCSES crosswalk"
 
 
-class NCSESFieldGroup(StrEnum):
+class NCSESFieldGroup(str, Enum):
     """Field values for the [NCSES Broad Field Alternate Classification](
             https://ncsesdata.nsf.gov/sere/2018/html/sere18-dt-taba001.html)
 
@@ -223,7 +226,7 @@ class NCSESFieldGroup(StrEnum):
     unknown = "Not categorized in NCSES crosswalk"
 
 
-class NCSESDetailedFieldGroup(StrEnum):
+class NCSESDetailedFieldGroup(str, Enum):
     """Field values for the [NCSES Detailed Field Alternate Classification](
             https://ncsesdata.nsf.gov/sere/2018/html/sere18-dt-taba001.html)
 
@@ -341,7 +344,7 @@ class NCSESDetailedFieldGroup(StrEnum):
     unknown = "Not categorized in NCSES crosswalk"
 
 
-class NSFBroadField(StrEnum):
+class NSFBroadField(str, Enum):
     """Field values according to the [NSF Diversity in STEM Report](
             https://ncses.nsf.gov/pubs/nsf23315/report)
 

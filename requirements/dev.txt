@@ -4,7 +4,4 @@
 -r docs.txt
 -r ../pipeline/requirements.txt
 
-build
 pip-tools
-pytest
-twine

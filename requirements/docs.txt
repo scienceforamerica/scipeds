@@ -1,5 +1,7 @@
 -e .
 
+-r ../pipeline/requirements.txt
+
 griffe-pydantic
 mkdocs
 mkdocs-gen-files
