@@ -5,3 +5,4 @@
 -r ../pipeline/requirements.txt
 
 pip-tools
+twine
