@@ -1,7 +1,8 @@
 -e .
 
+-r ../pipeline/requirements.txt
+
 griffe-pydantic
-loguru
 mkdocs
 mkdocs-gen-files
 mkdocs-jupyter

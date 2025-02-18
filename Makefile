@@ -70,7 +70,7 @@ test-assets:
 test-debug:
 	pytest -v scipeds --pdb
 
-## Build static version of docs
+## Install requirements for building docs
 .PHONY: docs-requirements
 docs-requirements:
 	pip install -r requirements/docs.txt
@@ -85,7 +85,7 @@ docs-build:
 docs-serve:
 	cd docs && mkdocs serve --clean
 
-## Download raw data 	files from Cloud Storage
+## Download raw data files from Cloud Storage
 .PHONY: download-raw
 download-raw:
 	python pipeline/download.py download-from-bucket

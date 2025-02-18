@@ -45,7 +45,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv pip install -r requirements/dev.txt
+          uv pip install -r requirements/ci.txt
 
       - name: Run tests
         run: |

@@ -1,6 +1,10 @@
 cloudpathlib[gs]
 duckdb
+loguru
+lxml
+openpyxl
 pandas
 requests
 tqdm
 typer
+xlrd

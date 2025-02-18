@@ -4,30 +4,32 @@
 #
 #    pip-compile --output-file=pipeline/requirements.txt pipeline/requirements.in
 #
-cachetools==5.5.0
+cachetools==5.5.1
     # via google-auth
-certifi==2024.8.30
+certifi==2025.1.31
     # via requests
-charset-normalizer==3.4.0
+charset-normalizer==3.4.1
     # via requests
-click==8.1.7
+click==8.1.8
     # via typer
 cloudpathlib[gs]==0.20.0
     # via -r pipeline/requirements.in
-duckdb==1.1.3
+duckdb==1.2.0
     # via -r pipeline/requirements.in
-google-api-core==2.23.0
+et-xmlfile==2.0.0
+    # via openpyxl
+google-api-core==2.24.1
     # via
     #   google-cloud-core
     #   google-cloud-storage
-google-auth==2.36.0
+google-auth==2.38.0
     # via
     #   google-api-core
     #   google-cloud-core
     #   google-cloud-storage
 google-cloud-core==2.4.1
     # via google-cloud-storage
-google-cloud-storage==2.18.2
+google-cloud-storage==3.0.0
     # via cloudpathlib
 google-crc32c==1.6.0
     # via
@@ -35,21 +37,27 @@ google-crc32c==1.6.0
     #   google-resumable-media
 google-resumable-media==2.7.2
     # via google-cloud-storage
-googleapis-common-protos==1.66.0
+googleapis-common-protos==1.67.0
     # via google-api-core
 idna==3.10
     # via requests
+loguru==0.7.3
+    # via -r pipeline/requirements.in
+lxml==5.3.1
+    # via -r pipeline/requirements.in
 markdown-it-py==3.0.0
     # via rich
 mdurl==0.1.2
     # via markdown-it-py
-numpy==2.1.3
+numpy==2.2.3
     # via pandas
+openpyxl==3.1.5
+    # via -r pipeline/requirements.in
 pandas==2.2.3
     # via -r pipeline/requirements.in
-proto-plus==1.25.0
+proto-plus==1.26.0
     # via google-api-core
-protobuf==5.29.0
+protobuf==5.29.3
     # via
     #   google-api-core
     #   googleapis-common-protos
@@ -60,11 +68,11 @@ pyasn1==0.6.1
     #   rsa
 pyasn1-modules==0.4.1
     # via google-auth
-pygments==2.18.0
+pygments==2.19.1
     # via rich
 python-dateutil==2.9.0.post0
     # via pandas
-pytz==2024.2
+pytz==2025.1
     # via pandas
 requests==2.32.3
     # via
@@ -77,15 +85,17 @@ rsa==4.9
     # via google-auth
 shellingham==1.5.4
     # via typer
-six==1.16.0
+six==1.17.0
     # via python-dateutil
 tqdm==4.67.1
     # via -r pipeline/requirements.in
-typer==0.13.1
+typer==0.15.1
     # via -r pipeline/requirements.in
 typing-extensions==4.12.2
     # via typer
-tzdata==2024.2
+tzdata==2025.1
     # via pandas
-urllib3==2.2.3
+urllib3==2.3.0
     # via requests
+xlrd==2.0.1
+    # via -r pipeline/requirements.in

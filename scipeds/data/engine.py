@@ -4,16 +4,16 @@ from typing import Any, Dict, List, Optional
 import duckdb
 import pandas as pd
 
-from scipeds import constants
+from scipeds.constants import CIP_TABLE, DB_NAME, INSTITUTIONS_TABLE, SCIPEDS_CACHE_DIR
 
 
 class IPEDSQueryEngine:
-    def __init__(self, db_path: Optional[Path] = constants.SCIPEDS_CACHE_DIR / constants.DB_NAME):
+    def __init__(self, db_path: Optional[Path] = SCIPEDS_CACHE_DIR / DB_NAME):
         """A structured way to query the IPEDS table to format data for visualization
 
         Args:
             db_path (Optional[Path], optional): Path to pre-processed database file.
-                Defaults to constants.CACHE_DIR / constants.DB_NAME.
+                Defaults to CACHE_DIR / DB_NAME.
 
         Raises:
             FileNotFoundError: Pre-processed database file not found.
@@ -28,7 +28,7 @@ class IPEDSQueryEngine:
         self.db_path = str(db_path)
 
     def get_df_from_query(
-        self, query: str, query_params: Optional[Dict[str, Any]] = None
+        self, query: str, query_params: Optional[Dict[str, Any]] = None, show_query: bool = False
     ) -> pd.DataFrame:
         """Return the dataframe result of the provided SQL query on the pre-processed duckdb
 
@@ -36,10 +36,14 @@ class IPEDSQueryEngine:
             query (str): SQL query (using duckdb syntax)
             query_params (Dict[str, Any], optional): Prepared statement variables for query.
                 Defaults to None.
+            show_query (bool): Whether to print the query and parameters before executing.
+                Defaults to False
 
         Returns:
             pd.DataFrame: Data returned by query
         """
+        if show_query:
+            print(f"Query: {query}, Params: {query_params}")
         with duckdb.connect(self.db_path, read_only=True) as con:
             if query_params is not None:
                 df = con.execute(query, query_params).df()
@@ -63,7 +67,22 @@ class IPEDSQueryEngine:
         Returns:
             pd.DataFrame: Data frame of CIP codes and corresponding taxonomy titles
         """
-        cip_codes = self.get_df_from_query(f"SELECT * FROM {constants.CIP_TABLE}").set_index(
-            "cip2020"
-        )
+        cip_codes = self.get_df_from_query(
+            f"SELECT * FROM {CIP_TABLE} ORDER BY cip2020"
+        ).set_index("cip2020")
         return cip_codes
+
+    def get_institutions_table(self, cols: str | list[str] | None = None) -> pd.DataFrame:
+        """Get institution characteristics table, optionally with specified columns
+
+        Returns:
+            pd.DataFrame: Data frame of institution characteristics
+        """
+        inst_df = self.get_df_from_query(f"SELECT * FROM {INSTITUTIONS_TABLE}").set_index("unitid")
+        if isinstance(cols, str):
+            cols = [cols]
+        if cols is None:
+            return inst_df
+        for col in inst_df.columns:
+            assert col in inst_df.columns, f"Invalid column name(s) provided: {cols}"
+        return inst_df[cols]

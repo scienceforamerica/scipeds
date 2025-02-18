@@ -50,6 +50,28 @@ class RaceEthn(str, Enum):
     unknown = "Unknown"
 
 
+class Grouping(str, Enum):
+    gender = "gender"
+    race_ethnicity = "race_ethnicity"
+    intersectional = "intersectional"
+
+    @property
+    def label_suffix(self) -> str:
+        return f"within_{self.value}" if self is not self.intersectional else self.value
+
+    @property
+    def students_suffix(self) -> str:
+        return "students" if self is self.intersectional else ""
+
+    @property
+    def grouping_columns(self) -> list[str]:
+        return (
+            [self.value]
+            if self is not self.intersectional
+            else [self.race_ethnicity.value, self.gender.value]  # type: ignore
+        )
+
+
 class AwardLevel(str, Enum):
     """Enumeration for award level
 
