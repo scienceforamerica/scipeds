@@ -46,27 +46,6 @@ FROM field_group_totals
 {joins}
 ORDER BY {field_group_cols};"""
 
-    def _validate_inputs(
-        self, grouping: Grouping | None = None, taxonomy: FieldTaxonomy | None = None
-    ):
-        """Validate the inputs to the query engine
-
-        Args:
-            grouping (Grouping): How to group the data
-            taxonomy (FieldTaxonomy): Taxonomy to aggregate over
-        """
-        if grouping is not None and not isinstance(grouping, Grouping):
-            try:
-                grouping = Grouping(grouping)
-            except ValueError:
-                raise ValueError(f"Invalid grouping {grouping} specified")
-        if taxonomy is not None and not isinstance(taxonomy, FieldTaxonomy):
-            try:
-                taxonomy = FieldTaxonomy(taxonomy)
-            except ValueError:
-                raise ValueError(f"Invalid taxonomy {taxonomy} specified")
-        return grouping, taxonomy
-
     def _check_rollup_values(self, rollup: TaxonomyRollup):
         """Check whether the rollup values provided exist in the specified taxonomy, and warn
         the user if they do not.
@@ -95,7 +74,7 @@ ORDER BY {field_group_cols};"""
         field_total_cols: list[str],
         group_total_cols: list[str],
         total_cols: list[str],
-        taxonomy_filter: str,
+        taxonomy: str | None = None,
     ) -> str:
         """Format the query according to the provided arguments
 
@@ -105,11 +84,14 @@ ORDER BY {field_group_cols};"""
             field_total_cols (list[str]): Field-only aggregation
             group_total_cols (list[str]): Grouping-only aggregation
             total_cols (list[str]): Highest level of aggregation
-            taxonomy_filter (str): Filter to apply to the data
+            taxonomy (str, Optional): Taxonomy to filter on. Default: None
 
         Returns:
             str: Formatted query
         """
+        taxonomy_filter = (
+            f"WHERE {taxonomy} IN (SELECT UNNEST($taxonomy_values))" if taxonomy else ""
+        )
 
         def format_subquery(cols: list[str], name: str, filter: str = "") -> str:
             selection = ", ".join(cols) + "," if cols else ""
@@ -200,10 +182,12 @@ ORDER BY {field_group_cols};"""
             pd.DataFrame: Completions within fields in the roll-up,
                 aggregated by chosen grouping and subject to filters
         """
-        grouping, _ = self._validate_inputs(grouping=grouping)
+        # Validate inputs
+        grouping = Grouping(grouping)
+
         # Warn the user if rollup values are missing from the specified taxonomy
         self._check_rollup_values(rollup)
-        taxonomy_filter = f"WHERE {rollup.taxonomy_name} IN (SELECT UNNEST($taxonomy_values))"
+
         year = ["year"] if by_year else []
         field_group_cols = [*grouping.grouping_columns, *year]
         field_total_cols = [*year]
@@ -218,7 +202,7 @@ ORDER BY {field_group_cols};"""
             field_total_cols=field_total_cols,
             group_total_cols=group_total_cols,
             total_cols=total_cols,
-            taxonomy_filter=taxonomy_filter,
+            taxonomy=rollup.taxonomy_name,
         )
         query_params = query_filters.model_dump()
         query_params.update(rollup.model_dump(include={"taxonomy_values"}))
@@ -259,10 +243,10 @@ ORDER BY {field_group_cols};"""
         Returns:
             pd.DataFrame: Relative rates by grouping for each field in taxonomy
         """
-        grouping, taxonomy = self._validate_inputs(grouping=grouping, taxonomy=taxonomy)
-        taxonomy_filter = (
-            f"WHERE {taxonomy} IN (SELECT UNNEST($taxonomy_values))" if taxonomy_values else ""
-        )
+        # Validate inputs
+        grouping = Grouping(grouping)
+        taxonomy = FieldTaxonomy(taxonomy)
+
         year = ["year"] if by_year else []
         field_group_cols = [taxonomy.value, *grouping.grouping_columns, *year]
         field_total_cols = [taxonomy.value, *year]
@@ -276,7 +260,7 @@ ORDER BY {field_group_cols};"""
             field_total_cols=field_total_cols,
             group_total_cols=group_total_cols,
             total_cols=total_cols,
-            taxonomy_filter=taxonomy_filter,
+            taxonomy=taxonomy if taxonomy_values else None,
         )
         query_params = query_filters.model_dump()
         df = self.get_df_from_query(query, query_params=query_params, show_query=show_query)
@@ -319,12 +303,12 @@ ORDER BY {field_group_cols};"""
             pd.DataFrame: Completions in fields contained within roll-up, aggregated by
                 university UNITID and chosen grouping, subject to filters
         """
-        # Warn the user if rollup values are missing from the specified taxonomy
-        grouping, _ = self._validate_inputs(grouping=grouping)
+        # Validate inputs
+        grouping = Grouping(grouping)
 
+        # Warn the user if rollup values are missing from the specified taxonomy
         self._check_rollup_values(rollup)
 
-        taxonomy_filter = f"WHERE {rollup.taxonomy_name} IN (SELECT UNNEST($taxonomy_values))"
         year = ["year"] if by_year else []
         field_group_cols = ["unitid", *grouping.grouping_columns, *year]
         field_total_cols = ["unitid", *year]
@@ -338,7 +322,7 @@ ORDER BY {field_group_cols};"""
             field_total_cols=field_total_cols,
             group_total_cols=group_total_cols,
             total_cols=total_cols,
-            taxonomy_filter=taxonomy_filter,
+            taxonomy=rollup.taxonomy_name,
         )
         query_params = query_filters.model_dump()
         query_params.update(rollup.model_dump(include={"taxonomy_values"}))
@@ -389,11 +373,10 @@ ORDER BY {field_group_cols};"""
             pd.DataFrame: Completions in each field in the taxonomy, aggregated by
                 university UNITID and chosen grouping, subject to filters
         """
-        grouping, taxonomy = self._validate_inputs(grouping=grouping, taxonomy=taxonomy)
+        # Validate inputs
+        grouping = Grouping(grouping)
+        taxonomy = FieldTaxonomy(taxonomy)
 
-        taxonomy_filter = (
-            f"WHERE {taxonomy} IN (SELECT UNNEST($taxonomy_values))" if taxonomy_values else ""
-        )
         year = ["year"] if by_year else []
         field_group_cols = ["unitid", taxonomy.value, *grouping.grouping_columns, *year]
         field_total_cols = ["unitid", taxonomy.value, *year]
@@ -407,7 +390,7 @@ ORDER BY {field_group_cols};"""
             field_total_cols=field_total_cols,
             group_total_cols=group_total_cols,
             total_cols=total_cols,
-            taxonomy_filter=taxonomy_filter,
+            taxonomy=taxonomy if taxonomy_values else None,
         )
 
         query_params = query_filters.model_dump()
