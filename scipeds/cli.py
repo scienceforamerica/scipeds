@@ -1,6 +1,8 @@
 from pathlib import Path
+from shutil import rmtree
 
 import typer
+from cloudpathlib.exceptions import CloudPathNotExistsError
 from cloudpathlib.gs import GSPath
 
 from scipeds.constants import DB_NAME, SCIPEDS_BUCKET, SCIPEDS_CACHE_DIR
@@ -24,10 +26,6 @@ def download_db(
             Defaults to False.
         verbose (bool, optional): Whether to verbosely log. Defaults to True.
     """
-    if not SCIPEDS_CACHE_DIR.exists():
-        if verbose:
-            print(f"Creating scipeds cache directory {SCIPEDS_CACHE_DIR}.")
-        SCIPEDS_CACHE_DIR.mkdir()
     if output_path is None:
         if verbose:
             print(
@@ -35,6 +33,10 @@ def download_db(
                 f"{SCIPEDS_CACHE_DIR}."
             )
         output_path = SCIPEDS_CACHE_DIR / DB_NAME
+    if not (parent := output_path.parents[0]).exists():
+        if verbose:
+            print(f"Creating scipeds cache directory {parent.resolve()}.")
+        parent.mkdir(parents=True)
     if output_path.exists() and not overwrite:
         print(
             f"Database already downloaded to {output_path}. To re-download and "
@@ -48,7 +50,13 @@ def download_db(
     if verbose:
         print(f"Downloading pre-processed IPEDS db to {output_path}")
 
-    processed_db.download_to(output_path)
+    try:
+        processed_db.download_to(output_path)
+    except CloudPathNotExistsError:
+        raise CloudPathNotExistsError(
+            f"{processed_db} not found by scipeds. If you think it should exist, "
+            "please file an issue."
+        )
 
     if verbose:
         print("Download complete.")
@@ -56,12 +64,14 @@ def download_db(
 
 
 @app.command()
-def show_cache_usage(verbose: bool = True) -> int:
+def show_cache_usage(verbose: bool = True) -> float:
     """Reports how much storage is being used by scipeds"""
-    usage = sum(f.stat().st_size for f in SCIPEDS_CACHE_DIR.glob("**/*") if f.is_file())
+    sizes = [f.stat().st_size for f in SCIPEDS_CACHE_DIR.glob("**/*") if f.is_file()]
+    usage_mb = sum(sizes) // 1e6
+    count = len(sizes)
     if verbose:
-        print(f"scipeds is using {usage // 1e6:,.0f}MB in {SCIPEDS_CACHE_DIR}")
-    return usage
+        print(f"scipeds has {count} files and is using {usage_mb:,.0f}MB in {SCIPEDS_CACHE_DIR}")
+    return usage_mb
 
 
 @app.command()
@@ -70,17 +80,16 @@ def clean_cache(verbose: bool = True):
     if not SCIPEDS_CACHE_DIR.exists():
         print(f"Cache directory {SCIPEDS_CACHE_DIR} does not exist.")
         return 0
-    db_file = SCIPEDS_CACHE_DIR / DB_NAME
-    if db_file.exists():
-        if verbose:
-            print(f"Cleaning cache directory {SCIPEDS_CACHE_DIR}")
-            show_cache_usage(verbose)
-        db_file.unlink()
+    if verbose:
+        print(f"Cleaning cache directory {SCIPEDS_CACHE_DIR}")
+
+    show_cache_usage(verbose=True)
+    typer.confirm("Are you sure you want to delete the cache?", abort=True)
+
+    rmtree(SCIPEDS_CACHE_DIR)
+
     if verbose:
         print(f"Cleaned cache directory {SCIPEDS_CACHE_DIR}")
-        show_cache_usage(verbose)
-        print(f"Deleting {SCIPEDS_CACHE_DIR}")
-    SCIPEDS_CACHE_DIR.rmdir()
 
 
 if __name__ == "__main__":
