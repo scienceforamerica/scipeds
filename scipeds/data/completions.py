@@ -2,7 +2,7 @@ import warnings
 
 import pandas as pd
 
-from scipeds.constants import COMPLETIONS_TABLE
+from scipeds.constants import COMPLETIONS_TABLE, INSTITUTIONS_TABLE
 from scipeds.data.engine import IPEDSQueryEngine
 from scipeds.data.enums import FieldTaxonomy, Grouping
 from scipeds.data.queries import QueryFilters, TaxonomyRollup
@@ -36,6 +36,7 @@ totals AS (
     {total_select}
 )
 SELECT
+    {institution_name}
     {field_group_cols},
     {field_group_degrees},
     {field_total_degrees},
@@ -148,10 +149,15 @@ ORDER BY {field_group_cols};"""
         )
         t_var, t_join = format_join(total_cols, "uni_degrees_total", "totals")
         all_joins = list(sorted([ft_join, gt_join, t_join], reverse=True))
+        if "unitid" in total_cols:
+            all_joins.append(f"LEFT JOIN {INSTITUTIONS_TABLE} USING (unitid)")
         joins = "\n".join(all_joins)
 
         query = self.GROUP_FIELDS_QUERY.format(
             completions_table=COMPLETIONS_TABLE,
+            institution_name=f"{INSTITUTIONS_TABLE}.institution_name,"
+            if "unitid" in total_cols
+            else "",
             field_group_cols=", ".join(field_group_cols),
             field_group_total_select=field_group_total_select,
             field_total_select=field_total_select,
@@ -346,9 +352,9 @@ ORDER BY {field_group_cols};"""
             df = calculate_rel_rate(df, rollup_pct, uni_pct)
 
         if effect_size:
-            df = calculate_effect_size(df, rollup_pct, uni_pct, group_cols=field_group_cols[1:])
+            df = calculate_effect_size(df, rollup_pct, uni_pct, group_cols=field_group_cols[2:])
 
-        return df.set_index(field_group_cols)
+        return df.set_index(["institution_name"] + field_group_cols)
 
     def uni_field_totals_by_grouping(
         self,
@@ -417,6 +423,6 @@ ORDER BY {field_group_cols};"""
             df = calculate_rel_rate(df, field_pct, uni_pct)
 
         if effect_size:
-            df = calculate_effect_size(df, field_pct, uni_pct, group_cols=field_group_cols[1:])
+            df = calculate_effect_size(df, field_pct, uni_pct, group_cols=field_group_cols[2:])
 
-        return df.set_index(field_group_cols)
+        return df.set_index(["institution_name"] + field_group_cols)
