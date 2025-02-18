@@ -88,7 +88,7 @@ def download_from_ipeds(
         Path, typer.Option(help="Output directory for CIP crosswalks")
     ] = CROSSWALK_DIR,
     institution_output_dir: Annotated[
-        Path, typer.Option(help="Output directory for directory info")
+        Path, typer.Option(help="Output directory for institution directory information")
     ] = INSTITUTION_CHARACTERISTICS_DIR,
     survey_year: Annotated[
         Optional[int],
