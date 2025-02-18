@@ -114,10 +114,12 @@ ORDER BY {field_group_cols};"""
         def format_subquery(cols: list[str], name: str, filter: str = "") -> str:
             selection = ", ".join(cols) + "," if cols else ""
             groupby = f"GROUP BY {', '.join(cols)}" if cols else ""
-            return f"""SELECT {selection} 
-        COALESCE(SUM(n_awards), 0)::INT64 AS {name}
-    FROM filtered {filter}
-    {groupby}"""
+            return (
+                f"SELECT {selection} "
+                f"  COALESCE(SUM(n_awards), 0)::INT64 AS {name} "
+                f"FROM filtered {filter} "
+                f"{groupby}"
+            )
 
         field_group_total_select = format_subquery(
             field_group_cols, f"{agg_type}_degrees_{grouping.label_suffix}", taxonomy_filter
