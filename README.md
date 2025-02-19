@@ -99,4 +99,4 @@ In the process of their own work, the authors found it useful to create tools to
 
 ### Who created `scipeds`?
 
-`scipeds` was created by [Science for America](https://www.scienceforamerica.org/) as part of its mission to address urgent challenges in STEM education.
+`scipeds` was created by [Science for America](https://www.scienceforamerica.org/) (in collaboration with [DrivenData](https://www.drivendata.org/)) as part of its mission to address urgent challenges in STEM education.
