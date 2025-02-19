@@ -18,6 +18,7 @@ dependencies = [
 description = "A Python package for working with IPEDS data"
 authors = [
   { name = "Science for America", email = "info@scienceforamerica.org" },
+  { name = "DrivenData", email = "info@drivendata.org" },
 ]
 license = { file = "LICENSE" }
 readme = "README.md"
