@@ -33,7 +33,8 @@ class CIPCodeCrosswalk:
         self.crosswalk: Dict[Tuple[int, int], dict] = {}
         self._load_2010_to_2020_crosswalk()
         self._load_2000_to_2010_crosswalk()
-        self._load_1985_to_2000_crosswalk()
+        self._load_1990_to_2000_crosswalk()
+        self._load_1985_to_1990_crosswalk()
 
         self.year_ranges = sorted(list(self.crosswalk.keys()), key=lambda x: x[0])
         self.min_year = min(yr[0] for yr in self.year_ranges)
@@ -88,9 +89,9 @@ class CIPCodeCrosswalk:
         mappers = {"cip_map": cip_map, "title_map": title_map}
         self.crosswalk[year_range] = mappers
 
-    def _load_1985_to_2000_crosswalk(self):
+    def _load_1990_to_2000_crosswalk(self):
         """Load and clean/process the CIP1990 -> CIP2000 crosswalk"""
-        year_range = (1984, 1999) # TODO: check that using the 1985->2000 crosswalk is fine for 1984 as well
+        year_range = (1990, 1999) 
         file = self.crosswalk_dir / "1985-1999" / "CIP.XLS"
         sheet_name = "Crosswalk_CIP90toCIP2K"
         df = pd.read_excel(file, sheet_name=sheet_name, dtype=str)
@@ -113,8 +114,38 @@ class CIPCodeCrosswalk:
         df = df[df[origin_col] != df[destination_col]]
         cip_map = dict(zip(df[origin_col], df[destination_col]))
         cip_code_to_title_map = dict(zip(df[destination_col], df[destination_title_col]))
-
+        
         cip_map.update(self.CORRECTIONS_1990)
+        mappers = {"cip_map": cip_map, "title_map": cip_code_to_title_map}
+
+        self.crosswalk[year_range] = mappers
+
+    def _load_1985_to_1990_crosswalk(self):
+        """Load and clean/process the CIP1990 -> CIP2000 crosswalk"""
+        year_range = (1984, 1989) 
+        file = self.crosswalk_dir / "1985-1999" / "CIP.XLS"
+        sheet_name = "Crosswalk_CIP85toCIP90"
+        df = pd.read_excel(file, sheet_name=sheet_name, dtype=str)
+
+        origin_col = "CIP85"
+        destination_col = "CIP90"
+        destination_title_col = "CIPTITLE90"
+
+        # Get rid of any rows without an original CIP code (new CIP codes),
+        # without a new CIP code (deleted), and indicators for moved/deleted
+        # codes ("report as" and "deleted" in the CIP code column)
+        df = df[
+            (df[origin_col].notna())
+            & (df[destination_col].notna())
+            & ~(df[destination_title_col].str.contains("Deleted"))
+            & ~(df[destination_col].fillna("").str.contains("Report"))
+            & ~(df[destination_col].fillna("").str.contains("Deleted"))
+        ]
+
+        df = df[df[origin_col] != df[destination_col]]
+        cip_map = dict(zip(df[origin_col], df[destination_col]))
+        cip_code_to_title_map = dict(zip(df[destination_col], df[destination_title_col]))
+
         mappers = {"cip_map": cip_map, "title_map": cip_code_to_title_map}
 
         self.crosswalk[year_range] = mappers
@@ -153,6 +184,7 @@ class CIPCodeCrosswalk:
 
         # Iteratively walk forward in time
         for yr in self.year_ranges:
+            print(yr)
             if year <= yr[-1]:
                 new_codes, new_titles = self.walk(yr, new_codes, new_titles)
 
