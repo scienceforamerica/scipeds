@@ -10,22 +10,39 @@ Read the full documentation [here](https://scipeds.onrender.com/).
 
 ## Quickstart
 
-### Install `scipeds`
+### Option 1: Use Colab (no installation required)
+
+Click the link below to launch a pre-configured Google Colab notebook for `scipeds`:
+
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1ZlLL6m-9SNWEBmY5o09RtKQB4EBjq20n?usp=sharing)
+
+Open the Colab notebook using the link above (also [here](https://colab.research.google.com/drive/1ZlLL6m-9SNWEBmY5o09RtKQB4EBjq20n?usp=sharing)), and then follow the instructions in the notebook to explore and use `scipeds` in a cloud environment. This approach does not require you to install anything on your computer.
+
+If you want to keep using `scipeds` this way, you'll need to make a copy of the notebook into your own Google Drive.
+
+### Option 2: Install `scipeds` on your computer
+
+Alternatively, you can install `scipeds` on your own computer and work from there.
+
+#### Install scipeds
+
+Open a terminal and type:
 
 ```bash
-# with pip
 pip install scipeds
 ```
 
-### Download the pre-processed database
+#### Download the pre-processed database
 
-From the shell: 
+You can download the pre-processed database in two ways.
+
+Either from the shell: 
 
 ```bash
 scipeds download-db
 ```
 
-or from python / a notebook: 
+or from within python (i.e. in a Python interactive shell or from a notebook): 
 
 ```python
 import scipeds
@@ -33,7 +50,11 @@ import scipeds
 scipeds.download_db()
 ```
 
-### Query completions data using the corresponding query engine
+#### Query completions data using the corresponding query engine
+
+Now you are ready to try `scipeds`'s functionality!
+
+For example, you can look at completions data by gender:
 
 ```python
 from scipeds.data.completions import CompletionsQueryEngine
@@ -78,7 +99,7 @@ For more detailed usage, see the [Usage page](https://scipeds.onrender.com/usage
 
 `scipeds` is _not_ a tool for working with raw IPEDS data. For that, you should download data directly from [IPEDS](https://nces.ed.gov/ipeds/). 
 
-Full `scipeds` documentation can be found at [this link](https://scipeds.onrender.com/), and the source code is avilable on [GitHub](https://github.com/scienceforamerica/scipeds).
+Full `scipeds` documentation can be found at [this link](https://scipeds.onrender.com/), and the source code is available on [GitHub](https://github.com/scienceforamerica/scipeds).
 
 #### Currently supported IPEDS surveys
 
