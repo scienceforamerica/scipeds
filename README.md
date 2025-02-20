@@ -16,13 +16,15 @@ Click the link below to launch a pre-configured Google Colab notebook for `scipe
 
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1ZlLL6m-9SNWEBmY5o09RtKQB4EBjq20n?usp=sharing)
 
-Open the Colab notebook using the link above, and then follow the instructions in the notebook to explore and use `scipeds` in a cloud environment. This approach does not require you to install anything on your computer.
+Open the Colab notebook using the link above (also [here](https://colab.research.google.com/drive/1ZlLL6m-9SNWEBmY5o09RtKQB4EBjq20n?usp=sharing)), and then follow the instructions in the notebook to explore and use `scipeds` in a cloud environment. This approach does not require you to install anything on your computer.
 
 If you want to keep using `scipeds` this way, you'll need to make a copy of the notebook into your own Google Drive.
 
 ### Option 2: Install `scipeds` on your computer
 
-Alternatively, you can install scipeds on your own computer and work from there.
+Alternatively, you can install `scipeds` on your own computer and work from there.
+
+#### Install scipeds
 
 Open a terminal and type:
 
@@ -30,7 +32,7 @@ Open a terminal and type:
 pip install scipeds
 ```
 
-### Download the pre-processed database
+#### Download the pre-processed database
 
 You can download the pre-processed database in two ways.
 
@@ -48,9 +50,9 @@ import scipeds
 scipeds.download_db()
 ```
 
-Now you are ready to try `scipeds`'s functionality!
+#### Query completions data using the corresponding query engine
 
-### Query completions data using the corresponding query engine
+Now you are ready to try `scipeds`'s functionality!
 
 For example, you can look at completions data by gender:
 
