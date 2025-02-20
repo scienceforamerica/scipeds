@@ -1,77 +1,95 @@
 name: release
 
 on:
-    workflow_dispatch:
-        inputs:
-            RELEASE_VERSION:
-                description: 'Version to release'
-                required: true
+  workflow_dispatch:
+    inputs:
+      RELEASE_VERSION:
+        description: "Version to release"
+        required: true
 
 jobs:
-    release:
-        name: Release ${{ github.event.inputs.RELEASE_VERSION }}
-        runs-on: ubuntu-latest
+  release:
+    name: Release ${{ github.event.inputs.RELEASE_VERSION }}
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout repo
-              uses: actions/checkout@v4
-            
-            - name: Install uv
-              uses: astral-sh/setup-uv@v5
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-            - name: Install dependencies
-              run: |
-                uv venv --python=3.11
-                uv pip install -r requirements/ci.txt -r pipeline/requirements.txt
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
 
-            - name: Download raw data
-              run: |
-                uv run make download-raw
+      - name: Install dependencies
+        run: |
+          uv venv --python=3.11
+          uv pip install -r requirements/ci.txt -r pipeline/requirements.txt
 
-            - name: Process raw data into duckdb file
-              run: |
-                uv run make process
+      - name: Download raw data
+        run: |
+          uv run make download-raw
 
-            - name: Set environment variable for version
-              run: |
-                echo "VERSION_UNDERSCORE=${{ github.event.inputs.RELEASE_VERSION }}" | sed 's/\./_/g' | tee -a $GITHUB_ENV
-            
-            - name: Make sure file exists
-              run: |
-                if [ ! -f data/processed/scipeds_${VERSION_UNDERSCORE}.duckdb ]; then
-                  echo "File does not exist!"
-                  exit 1
-                fi
-                ls -l data/processed/
-             
-            - name: Authenticate with GCP
-              uses: google-github-actions/auth@v2
-              with:
-                credentials_json: ${{ secrets.GCP_SA_KEY }}
-            
-            - name: Upload processed data to GCS
-              uses: google-github-actions/upload-cloud-storage@v2
-              with:
-                path: 'data/processed/scipeds_${{ env.VERSION_UNDERSCORE }}.duckdb'
-                destination: '${{ secrets.GCS_BUCKET }}/processed/'
+      - name: Process raw data into duckdb file
+        run: |
+          uv run make process
 
-            - name: Create build assets
-              run: |
-                uv build
-            
-            - name: Upload build to Test PyPI
-              uses: pypa/gh-action-pypi-publish@v1.12.4
-              with:
-                user: ${{ secrets.TEST_PYPI_USERNAME }}
-                password: ${{ secrets.TEST_PYPI_PASSWORD }}
-                repository_url: https://test.pypi.org/legacy/
-                skip_existing: true
-            
+      - name: Set environment variable for version
+        run: |
+          echo "VERSION_UNDERSCORE=${{ github.event.inputs.RELEASE_VERSION }}" | sed 's/\./_/g' | tee -a $GITHUB_ENV
 
-            - name: Upload build to Prod PyPI
-              uses: pypa/gh-action-pypi-publish@v1.12.4
-              with:
-                user: ${{ secrets.PROD_PYPI_USERNAME }}
-                password: ${{ secrets.PROD_PYPI_PASSWORD }}
-                skip_existing: false
+      - name: Make sure file exists
+        run: |
+          if [ ! -f data/processed/scipeds_${VERSION_UNDERSCORE}.duckdb ]; then
+            echo "File does not exist!"
+            exit 1
+          fi
+          ls -l data/processed/
 
+      - name: Authenticate with GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Upload processed data to GCS
+        uses: google-github-actions/upload-cloud-storage@v2
+        with:
+          path: "data/processed/scipeds_${{ env.VERSION_UNDERSCORE }}.duckdb"
+          destination: "${{ secrets.GCS_BUCKET }}/processed/"
+
+      - name: Create build assets
+        run: |
+          uv build
+
+      - name: Upload build to Test PyPI
+        uses: pypa/gh-action-pypi-publish@v1.12.4
+        with:
+          user: ${{ secrets.TEST_PYPI_USERNAME }}
+          password: ${{ secrets.TEST_PYPI_PASSWORD }}
+          repository_url: https://test.pypi.org/legacy/
+          skip_existing: true
+
+      - name: Upload build to Prod PyPI
+        uses: pypa/gh-action-pypi-publish@v1.12.4
+        with:
+          user: ${{ secrets.PROD_PYPI_USERNAME }}
+          password: ${{ secrets.PROD_PYPI_PASSWORD }}
+          skip_existing: false
+
+      - name: Derive release notes from changelog
+        id: extract-changelog
+        uses: sean0x42/markdown-extract@v2.1.0
+        with:
+          file: CHANGELOG.md
+          pattern: ${{ github.event.inputs.version }}
+
+      - name: Write extracted changes to file
+        run: |
+          cat <<'__EOF__' > __CHANGELOG-extracted.md
+          ${{ steps.extract-changelog.outputs.markdown }}
+          __EOF__
+
+      - uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ github.event.inputs.version }}
+          commit: main
+          artifacts: "dist/*.whl,dist/*.tar.gz"
+          bodyFile: "__CHANGELOG-extracted.md"
