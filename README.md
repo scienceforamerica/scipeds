@@ -99,7 +99,7 @@ For more detailed usage, see the [Usage page](https://scipeds.onrender.com/usage
 
 `scipeds` is _not_ a tool for working with raw IPEDS data. For that, you should download data directly from [IPEDS](https://nces.ed.gov/ipeds/). 
 
-Full `scipeds` documentation can be found at [this link](https://scipeds.onrender.com/), and the source code is avilable on [GitHub](https://github.com/scienceforamerica/scipeds).
+Full `scipeds` documentation can be found at [this link](https://scipeds.onrender.com/), and the source code is available on [GitHub](https://github.com/scienceforamerica/scipeds).
 
 #### Currently supported IPEDS surveys
 
