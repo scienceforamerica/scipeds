@@ -34,7 +34,7 @@ jobs:
 
             - name: Set environment variable for version
               run: |
-                echo "VERSION_UNDERSCORE=${{ github.event.inputs.RELEASE_VERSION }}" | sed 's/\./_/g' >> $GITHUB_ENV
+                echo "VERSION_UNDERSCORE=${{ github.event.inputs.RELEASE_VERSION }}" | sed 's/\./_/g' | tee -a $GITHUB_ENV
             
             - name: Make sure file exists
               run: |
