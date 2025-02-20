@@ -143,11 +143,13 @@ ORDER BY {field_group_cols};"""
             all_joins.append(f"LEFT JOIN {INSTITUTIONS_TABLE} USING (unitid)")
         joins = "\n".join(all_joins)
 
+        institution_name = (
+            f"{INSTITUTIONS_TABLE}.institution_name," if "unitid" in total_cols else ""
+        )
+
         query = self.GROUP_FIELDS_QUERY.format(
             completions_table=COMPLETIONS_TABLE,
-            institution_name=f"{INSTITUTIONS_TABLE}.institution_name,"
-            if "unitid" in total_cols
-            else "",
+            institution_name=institution_name,
             unitid_filter=unitid_filter,
             field_group_cols=", ".join(field_group_cols),
             field_group_total_select=field_group_total_select,
