@@ -57,7 +57,7 @@ jobs:
 
             - name: Create build assets
               run: |
-                uv run make build
+                uv build
             
             - name: Upload build to Test PyPI
               uses: pypa/gh-action-pypi-publish@v1.12.4
@@ -66,4 +66,12 @@ jobs:
                 password: ${{ secrets.TEST_PYPI_PASSWORD }}
                 repository_url: https://test.pypi.org/legacy/
                 skip_existing: true
+            
+
+            - name: Upload build to Prod PyPI
+              uses: pypa/gh-action-pypi-publish@v1.12.4
+              with:
+                user: ${{ secrets.PROD_PYPI_USERNAME }}
+                password: ${{ secrets.PROD_PYPI_PASSWORD }}
+                skip_existing: false
 
