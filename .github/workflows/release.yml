@@ -38,7 +38,7 @@ jobs:
             
             - name: Make sure file exists
               run: |
-                if [ ! -f data/processed/scipeds_${{ env.VERSION_UNDERSCORE }}.duckdb ]; then
+                if [ ! -f data/processed/scipeds_${VERSION_UNDERSCORE}.duckdb ]; then
                   echo "File does not exist!"
                   exit 1
                 fi
