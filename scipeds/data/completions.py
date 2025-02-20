@@ -22,6 +22,7 @@ WITH filtered AS (
         AND race_ethnicity IN (SELECT UNNEST($race_ethns))
         AND awlevel IN (SELECT UNNEST($award_levels))
         AND majornum IN (SELECT UNNEST($majornums))
+        {unitid_filter}
 ), 
 field_group_totals AS (
     {field_group_total_select}
@@ -75,6 +76,7 @@ ORDER BY {field_group_cols};"""
         group_total_cols: list[str],
         total_cols: list[str],
         taxonomy: str | None = None,
+        unitids: list[int] | None = None,
     ) -> str:
         """Format the query according to the provided arguments
 
@@ -85,12 +87,16 @@ ORDER BY {field_group_cols};"""
             group_total_cols (list[str]): Grouping-only aggregation
             total_cols (list[str]): Highest level of aggregation
             taxonomy (str, Optional): Taxonomy to filter on. Default: None
+            unitids (list[int], Optional): List of unitids to filter on. Default: None
 
         Returns:
             str: Formatted query
         """
         taxonomy_filter = (
             f"WHERE {taxonomy} IN (SELECT UNNEST($taxonomy_values))" if taxonomy else ""
+        )
+        unitid_filter = (
+            f"AND unitid IN ({', '.join([str(unitid) for unitid in unitids])})" if unitids else ""
         )
 
         def format_subquery(cols: list[str], name: str, filter: str = "") -> str:
@@ -137,11 +143,14 @@ ORDER BY {field_group_cols};"""
             all_joins.append(f"LEFT JOIN {INSTITUTIONS_TABLE} USING (unitid)")
         joins = "\n".join(all_joins)
 
+        institution_name = (
+            f"{INSTITUTIONS_TABLE}.institution_name," if "unitid" in total_cols else ""
+        )
+
         query = self.GROUP_FIELDS_QUERY.format(
             completions_table=COMPLETIONS_TABLE,
-            institution_name=f"{INSTITUTIONS_TABLE}.institution_name,"
-            if "unitid" in total_cols
-            else "",
+            institution_name=institution_name,
+            unitid_filter=unitid_filter,
             field_group_cols=", ".join(field_group_cols),
             field_group_total_select=field_group_total_select,
             field_total_select=field_total_select,
@@ -164,6 +173,7 @@ ORDER BY {field_group_cols};"""
         by_year: bool = False,
         rel_rate: bool = False,
         show_query: bool = False,
+        filter_unitids: list[int] | None = None,
     ) -> pd.DataFrame:
         """Aggregate completions (subject to filters) for fields within the given roll-up,
         aggregating by selected grouping and subject to the applied filters
@@ -203,6 +213,7 @@ ORDER BY {field_group_cols};"""
             group_total_cols=group_total_cols,
             total_cols=total_cols,
             taxonomy=rollup.taxonomy_name,
+            unitids=filter_unitids,
         )
         query_params = query_filters.model_dump()
         query_params.update(rollup.model_dump(include={"taxonomy_values"}))
@@ -227,6 +238,7 @@ ORDER BY {field_group_cols};"""
         by_year: bool = False,
         rel_rate: bool = False,
         show_query: bool = False,
+        filter_unitids: list[int] | None = None,
     ) -> pd.DataFrame:
         """Compute aggregate counts for all fields in a given taxonomy
 
@@ -261,6 +273,7 @@ ORDER BY {field_group_cols};"""
             group_total_cols=group_total_cols,
             total_cols=total_cols,
             taxonomy=taxonomy if taxonomy_values else None,
+            unitids=filter_unitids,
         )
         query_params = query_filters.model_dump()
         df = self.get_df_from_query(query, query_params=query_params, show_query=show_query)
@@ -284,6 +297,7 @@ ORDER BY {field_group_cols};"""
         rel_rate: bool = False,
         effect_size: bool = False,
         show_query: bool = False,
+        filter_unitids: list[int] | None = None,
     ) -> pd.DataFrame:
         """Get intersectional degree counts and rates within intersectional subgroups"
 
@@ -323,6 +337,7 @@ ORDER BY {field_group_cols};"""
             group_total_cols=group_total_cols,
             total_cols=total_cols,
             taxonomy=rollup.taxonomy_name,
+            unitids=filter_unitids,
         )
         query_params = query_filters.model_dump()
         query_params.update(rollup.model_dump(include={"taxonomy_values"}))
@@ -352,6 +367,7 @@ ORDER BY {field_group_cols};"""
         rel_rate: bool = False,
         effect_size: bool = False,
         show_query: bool = False,
+        filter_unitids: list[int] | None = None,
     ) -> pd.DataFrame:
         """Aggregate completions (subject to filters) for all fields
         within a given taxonomy at each university
@@ -391,6 +407,7 @@ ORDER BY {field_group_cols};"""
             group_total_cols=group_total_cols,
             total_cols=total_cols,
             taxonomy=taxonomy if taxonomy_values else None,
+            unitids=filter_unitids,
         )
 
         query_params = query_filters.model_dump()

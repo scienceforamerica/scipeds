@@ -168,8 +168,10 @@ class QueryEngineTests(unittest.TestCase):
         with self.assertWarnsRegex(UserWarning, "IPEDS"):
             filters = QueryFilters()
 
-        expected_cols = [
+        index_cols = [
             "gender",
+        ]
+        value_cols = [
             "rollup_degrees_within_gender",
             "rollup_degrees_total",
             "uni_degrees_within_gender",
@@ -181,9 +183,9 @@ class QueryEngineTests(unittest.TestCase):
         # Two years => double again
         one_stem_gender_subtotals = np.array([3, 6, 9, 18]) * 2 * 2
         expected = pd.DataFrame(
-            columns=expected_cols,
+            columns=index_cols + value_cols,
             data=[[gender] + one_stem_gender_subtotals.tolist() for gender in self.genders],
-        ).set_index("gender")
+        ).set_index(index_cols)
         result = self.engine.rollup_by_grouping(
             grouping=Grouping.gender, rollup=one_stem, query_filters=filters
         )
@@ -199,17 +201,19 @@ class QueryEngineTests(unittest.TestCase):
         # Two years => double again
         two_stem_gender_subtotals = np.array([6, 12, 9, 18]) * 2 * 2
         expected = pd.DataFrame(
-            columns=expected_cols,
+            columns=index_cols + value_cols,
             data=[[gender] + two_stem_gender_subtotals.tolist() for gender in self.genders],
-        ).set_index("gender")
+        ).set_index(index_cols)
         result = self.engine.rollup_by_grouping(
             grouping=Grouping.gender, rollup=two_stem, query_filters=filters
         )
         self._check_result(result, expected)
 
         # Test grouping by race
-        expected_cols = [
+        index_cols = [
             "race_ethnicity",
+        ]
+        value_cols = [
             "rollup_degrees_within_race_ethnicity",
             "rollup_degrees_total",
             "uni_degrees_within_race_ethnicity",
@@ -220,9 +224,9 @@ class QueryEngineTests(unittest.TestCase):
         # Two years => double again
         one_stem_re_subtotals = np.array([2, 6, 6, 18]) * 2 * 2
         expected = pd.DataFrame(
-            columns=expected_cols,
+            columns=index_cols + value_cols,
             data=[[race] + one_stem_re_subtotals.tolist() for race in self.race_ethnicities],
-        ).set_index("race_ethnicity")
+        ).set_index(index_cols)
         result = self.engine.rollup_by_grouping(
             grouping=Grouping.race_ethnicity, rollup=one_stem, query_filters=filters
         )
@@ -233,18 +237,20 @@ class QueryEngineTests(unittest.TestCase):
         # Two years => double again
         two_stem_re_subtotals = np.array([4, 12, 6, 18]) * 2 * 2
         expected = pd.DataFrame(
-            columns=expected_cols,
+            columns=index_cols + value_cols,
             data=[[race] + two_stem_re_subtotals.tolist() for race in self.race_ethnicities],
-        ).set_index("race_ethnicity")
+        ).set_index(index_cols)
         result = self.engine.rollup_by_grouping(
             grouping=Grouping.race_ethnicity, rollup=two_stem, query_filters=filters
         )
         self._check_result(result, expected)
 
         # Test intersectional
-        expected_cols = [
+        index_cols = [
             "race_ethnicity",
             "gender",
+        ]
+        value_cols = [
             "rollup_degrees_intersectional",
             "rollup_degrees_total",
             "uni_degrees_intersectional",
@@ -257,13 +263,13 @@ class QueryEngineTests(unittest.TestCase):
         # Two years => double again
         subtotals = np.array([1, 6, 3, 18]) * 2 * 2
         expected = pd.DataFrame(
-            columns=expected_cols,
+            columns=index_cols + value_cols,
             data=[
                 [race, gender] + subtotals.tolist()
                 for race in self.race_ethnicities
                 for gender in self.genders
             ],
-        ).set_index(["race_ethnicity", "gender"])
+        ).set_index(index_cols)
         result = self.engine.rollup_by_grouping(
             grouping=Grouping.intersectional, rollup=one_stem, query_filters=filters
         )
@@ -272,34 +278,61 @@ class QueryEngineTests(unittest.TestCase):
         # Test by year
         # One major in STEM = 3 men/women per uni in each group
         # Two unis => double
-        expected_cols = [
+        # one per year
+        index_cols = [
             "gender",
             "year",
+        ]
+        value_cols = [
             "rollup_degrees_within_gender",
             "rollup_degrees_total",
             "uni_degrees_within_gender",
             "uni_degrees_total",
         ]
-        one_stem_gender_subtotals = np.array([3, 6, 9, 18]) * 2
+        one_stem_gender_subtotals = np.array([3, 6, 9, 18]) * 2 * 1
         expected = pd.DataFrame(
-            columns=expected_cols,
+            columns=index_cols + value_cols,
             data=[
                 [gender, year] + one_stem_gender_subtotals.tolist()
                 for gender in self.genders
                 for year in self.years
             ],
-        ).set_index(["gender", "year"])
+        ).set_index(index_cols)
         result = self.engine.rollup_by_grouping(
             grouping=Grouping.gender, rollup=one_stem, query_filters=filters, by_year=True
+        )
+        self._check_result(result, expected)
+
+        # test unitid filter
+        # One major in STEM = 3 men/women per uni in each group
+        # One uni only
+        # one each year
+        one_stem_gender_subtotals = np.array([3, 6, 9, 18]) * 1 * 1
+        expected = pd.DataFrame(
+            columns=index_cols + value_cols,
+            data=[
+                [gender, year] + one_stem_gender_subtotals.tolist()
+                for gender in self.genders
+                for year in self.years
+            ],
+        ).set_index(index_cols)
+        result = self.engine.rollup_by_grouping(
+            grouping=Grouping.gender,
+            rollup=one_stem,
+            query_filters=filters,
+            by_year=True,
+            filter_unitids=[1],
         )
         self._check_result(result, expected)
 
     def test_group_fields_query(self):
         with self.assertWarnsRegex(UserWarning, "IPEDS"):
             filters = QueryFilters()
-        expected_cols = [
+        index_cols = [
             "ncses_detailed_field_group",
             "gender",
+        ]
+        value_cols = [
             "field_degrees_within_gender",
             "field_degrees_total",
             "uni_degrees_within_gender",
@@ -309,13 +342,15 @@ class QueryEngineTests(unittest.TestCase):
         # 6 people per major total
         # 9 people per uni degree per gender
         # 18 people per uni degree total
+        # 2 unis => double
+        # 2 years => double
         subtotals = np.array([3, 6, 9, 18]) * 2 * 2
         expected = pd.DataFrame(
-            columns=expected_cols,
+            columns=index_cols + value_cols,
             data=[
                 [dfg, gender] + subtotals.tolist() for dfg in self.dfgs for gender in self.genders
             ],
-        ).set_index(expected_cols[:2])
+        ).set_index(index_cols)
         result = self.engine.field_totals_by_grouping(
             grouping=Grouping.gender,
             taxonomy=FieldTaxonomy.ncses_detailed_field_group,
@@ -324,9 +359,11 @@ class QueryEngineTests(unittest.TestCase):
         self._check_result(result, expected)
 
         # Test race
-        expected_cols = [
+        index_cols = [
             "ncses_detailed_field_group",
             "race_ethnicity",
+        ]
+        value_cols = [
             "field_degrees_within_race_ethnicity",
             "field_degrees_total",
             "uni_degrees_within_race_ethnicity",
@@ -336,15 +373,17 @@ class QueryEngineTests(unittest.TestCase):
         # 6 people per race subtotal
         # 6 people per uni per race
         # 18 people per uni total
+        # 2 unis => double
+        # 2 years => double
         subtotals = np.array([2, 6, 6, 18]) * 2 * 2
         expected = pd.DataFrame(
-            columns=expected_cols,
+            columns=index_cols + value_cols,
             data=[
                 [dfg, race] + subtotals.tolist()
                 for dfg in self.dfgs
                 for race in self.race_ethnicities
             ],
-        ).set_index(expected_cols[:2])
+        ).set_index(index_cols)
         result = self.engine.field_totals_by_grouping(
             grouping=Grouping.race_ethnicity,
             taxonomy=FieldTaxonomy.ncses_detailed_field_group,
@@ -353,10 +392,12 @@ class QueryEngineTests(unittest.TestCase):
         self._check_result(result, expected)
 
         # Test by year
-        expected_cols = [
+        index_cols = [
             "ncses_detailed_field_group",
             "race_ethnicity",
             "year",
+        ]
+        value_cols = [
             "field_degrees_within_race_ethnicity",
             "field_degrees_total",
             "uni_degrees_within_race_ethnicity",
@@ -366,16 +407,18 @@ class QueryEngineTests(unittest.TestCase):
         # 6 people per race subtotal
         # 6 people per uni per race
         # 18 people per uni total
-        subtotals = np.array([2, 6, 6, 18]) * 2
+        # 2 unis => double
+        # each year
+        subtotals = np.array([2, 6, 6, 18]) * 2 * 1
         expected = pd.DataFrame(
-            columns=expected_cols,
+            columns=index_cols + value_cols,
             data=[
                 [dfg, race, year] + subtotals.tolist()
                 for dfg in self.dfgs
                 for race in self.race_ethnicities
                 for year in self.years
             ],
-        ).set_index(expected_cols[:3])
+        ).set_index(index_cols)
         result = self.engine.field_totals_by_grouping(
             grouping=Grouping.race_ethnicity,
             taxonomy=FieldTaxonomy.ncses_detailed_field_group,
@@ -385,10 +428,12 @@ class QueryEngineTests(unittest.TestCase):
         self._check_result(result, expected)
 
         # Intersectional
-        expected_cols = [
+        index_cols = [
             "ncses_detailed_field_group",
             "race_ethnicity",
             "gender",
+        ]
+        value_cols = [
             "field_degrees_intersectional",
             "field_degrees_total",
             "uni_degrees_intersectional",
@@ -398,20 +443,47 @@ class QueryEngineTests(unittest.TestCase):
         # 6 people per major per total
         # 3 people per uni per race+gender
         # 18 people per uni total
+        # 2 unis => double
+        # 2 years => double
         subtotals = np.array([1, 6, 3, 18]) * 2 * 2
         expected = pd.DataFrame(
-            columns=expected_cols,
+            columns=index_cols + value_cols,
             data=[
                 [field, race, gender] + subtotals.tolist()
                 for field in self.dfgs
                 for race in self.race_ethnicities
                 for gender in self.genders
             ],
-        ).set_index(expected_cols[:3])
+        ).set_index(index_cols)
         result = self.engine.field_totals_by_grouping(
             grouping=Grouping.intersectional,
             taxonomy=FieldTaxonomy.ncses_detailed_field_group,
             query_filters=filters,
+        )
+        self._check_result(result, expected)
+
+        # Test unitid filter
+        # 1 person per major per race+gender
+        # 6 people per major per total
+        # 3 people per uni per race+gender
+        # 18 people per uni total
+        # 1 uni
+        # 2 years => double
+        subtotals = np.array([1, 6, 3, 18]) * 1 * 2
+        expected = pd.DataFrame(
+            columns=index_cols + value_cols,
+            data=[
+                [field, race, gender] + subtotals.tolist()
+                for field in self.dfgs
+                for race in self.race_ethnicities
+                for gender in self.genders
+            ],
+        ).set_index(index_cols)
+        result = self.engine.field_totals_by_grouping(
+            grouping=Grouping.intersectional,
+            taxonomy=FieldTaxonomy.ncses_detailed_field_group,
+            query_filters=filters,
+            filter_unitids=[2],
         )
         self._check_result(result, expected)
 
@@ -535,6 +607,24 @@ class QueryEngineTests(unittest.TestCase):
         ).set_index(index_cols)
         result = self.engine.uni_rollup_by_grouping(
             grouping=Grouping.intersectional, rollup=fields_agg, query_filters=filters
+        )
+        self._check_result(result, expected)
+
+        # Test unitid filter
+        expected = pd.DataFrame(
+            columns=index_cols + value_cols,
+            data=[
+                [self.names[unitid], unitid, race_ethn, gender] + subtotals.tolist()
+                for unitid in [1]
+                for race_ethn in self.race_ethnicities
+                for gender in self.genders
+            ],
+        ).set_index(index_cols)
+        result = self.engine.uni_rollup_by_grouping(
+            grouping=Grouping.intersectional,
+            rollup=fields_agg,
+            query_filters=filters,
+            filter_unitids=[1],
         )
         self._check_result(result, expected)
 
@@ -705,5 +795,28 @@ class QueryEngineTests(unittest.TestCase):
             taxonomy_values=self.dfgs[:2],
             query_filters=filters,
             by_year=True,
+        )
+        self._check_result(result, expected)
+
+        # Test unitid filter
+        subtotals = np.array([1, 6, 3, 18])
+        expected = pd.DataFrame(
+            columns=index_cols + value_cols,
+            data=[
+                [self.names[unitid], unitid, dfg, race_ethn, gender, year] + subtotals.tolist()
+                for unitid in [2]
+                for dfg in self.dfgs
+                for race_ethn in self.race_ethnicities
+                for gender in self.genders
+                for year in self.years
+            ],
+        ).set_index(index_cols)
+        result = self.engine.uni_field_totals_by_grouping(
+            grouping=Grouping.intersectional,
+            taxonomy=FieldTaxonomy.ncses_detailed_field_group,
+            taxonomy_values=self.dfgs,
+            query_filters=filters,
+            by_year=True,
+            filter_unitids=[2],
         )
         self._check_result(result, expected)
