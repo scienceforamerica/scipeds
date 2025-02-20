@@ -10,34 +10,37 @@ Read the full documentation [here](https://scipeds.onrender.com/).
 
 ## Quickstart
 
-### Use Colab (No Installation Required)
+### Option 1: Use Colab (no installation required)
+
 Click the link below to launch a pre-configured Google Colab notebook for `scipeds`:
 
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1ZlLL6m-9SNWEBmY5o09RtKQB4EBjq20n?usp=sharing)
 
-### Steps:
-1. Open the Colab notebook using the link above.
-2. Follow the instructions in the notebook to explore and use `scipeds` in a cloud environment.
+Open the Colab notebook using the link above, and then follow the instructions in the notebook to explore and use `scipeds` in a cloud environment. This approach does not require you to install anything on your computer.
 
+If you want to keep using `scipeds` this way, you'll need to make a copy of the notebook into your own Google Drive.
 
-### Install `scipeds`
+### Option 2: Install `scipeds` on your computer
+
+Alternatively, you can install scipeds on your own computer and work from there.
+
+Open a terminal and type:
 
 ```bash
-# with pip
 pip install scipeds
 ```
 
-
-
 ### Download the pre-processed database
 
-From the shell: 
+You can download the pre-processed database in two ways.
+
+Either from the shell: 
 
 ```bash
 scipeds download-db
 ```
 
-or from python / a notebook: 
+or from within python (i.e. in a Python interactive shell or from a notebook): 
 
 ```python
 import scipeds
@@ -45,7 +48,11 @@ import scipeds
 scipeds.download_db()
 ```
 
+Now you are ready to try `scipeds`'s functionality!
+
 ### Query completions data using the corresponding query engine
+
+For example, you can look at completions data by gender:
 
 ```python
 from scipeds.data.completions import CompletionsQueryEngine
