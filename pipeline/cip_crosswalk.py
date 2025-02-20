@@ -184,7 +184,6 @@ class CIPCodeCrosswalk:
 
         # Iteratively walk forward in time
         for yr in self.year_ranges:
-            print(yr)
             if year <= yr[-1]:
                 new_codes, new_titles = self.walk(yr, new_codes, new_titles)
 
