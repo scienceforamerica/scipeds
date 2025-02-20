@@ -36,10 +36,10 @@ jobs:
         run: |
           echo "VERSION_UNDERSCORE=${{ github.event.inputs.RELEASE_VERSION }}" | sed 's/\./_/g' | tee -a $GITHUB_ENV
 
-      - name: Make sure file exists
+      - name: Make sure duckdb file exists
         run: |
           if [ ! -f data/processed/scipeds_${VERSION_UNDERSCORE}.duckdb ]; then
-            echo "File does not exist!"
+            echo "Expected duckdb file does not exist!"
             exit 1
           fi
           ls -l data/processed/
