@@ -162,17 +162,20 @@ class IPEDSCompletionsReader:
             df["awlevel"].astype(int).map(AWARD_LEVEL_CODES).fillna(AwardLevel.unknown.value)
         )
 
+        # Convert old "no dot" CIP Codes into standard format
+        if year <= 1986:
+            df["cipcode"] = df["cipcode"].apply(lambda c: "0" + c if len(c) == 5 else c)
+            df["cipcode"] = df["cipcode"].apply(lambda c: c[:2] + "." + c[2:])
+
         # Translate CIP codes (and drop generic / total codes)
+        if year <= 1986:
+            print('breakpoint')
         totals_mask = (df["cipcode"] == "99.0000") | (df["cipcode"] == "99")
         if verbose:
             logger.info(
                 f"Removing {totals_mask.sum():,} rows with CIP code of 99, indicating total"
             )
         df = df[~totals_mask].copy()
-
-        if year <= 1986:
-            df["cipcode"] = df["cipcode"].apply(lambda c: "0" + c if len(c) == 5 else c)
-            df["cipcode"] = df["cipcode"].apply(lambda c: c[:2] + "." + c[2:])
 
         cip2020_df = self.crosswalk.convert_to_cip2020(year, df["cipcode"])
         df = df.assign(cip2020=cip2020_df["cip2020"])
