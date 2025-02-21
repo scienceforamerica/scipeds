@@ -72,7 +72,15 @@ def inverse_bounded_ratio_transform(values: npt.NDArray | pd.Series) -> npt.NDAr
         1 -> inf # completely overrepresented
     """
     values = values.copy()
-    transformed = np.array(list(map(lambda x: x + 1 if x <= 0 else 1 / (1 - x), values)))
+
+    def _invert(x):
+        if x <= 0:
+            return x + 1
+        if x < 1:
+            return 1 / (1 - x)
+        return np.inf
+
+    transformed = np.array(list(map(_invert, values)))
     return transformed
 
 

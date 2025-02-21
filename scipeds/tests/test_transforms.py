@@ -61,11 +61,11 @@ def test_inverse_bounded_transform():
     """Test the bounded ratio transform
 
     Expected behavior
-        1 -> 0        # Parity
-        0.5 -> -0.5   # 2x under-represented
-        3 -> 0.66666  # 3x over-represented
-        0 -> -1       # completely underrepresented
-        inf -> 1      # completely overrepresented
+        0 -> 1        # Parity
+        -0.5 -> 0.5   # 2x under-represented
+        0.66666 -> 3  # 3x over-represented
+        -1 -> 0       # completely under-represented
+        1 -> inf      # completely over-represented
     """
     values = np.array([0, -0.5, 2 / 3, -1, 1])
     expected = np.array([1, 0.5, 3, 0, np.inf])
