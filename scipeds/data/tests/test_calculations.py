@@ -75,10 +75,6 @@ class CalculationTests(unittest.TestCase):
         for actual, expected in zip(actual_values, self.rel_rate):
             self.assertAlmostEqual(actual, expected)
 
-        actual_values = rr_df["excess_degrees_from_parity"].tolist()
-        for actual, expected in zip(actual_values, self.parity_effect_size):
-            self.assertAlmostEqual(actual, expected)
-
     def test_effect_size(self):
         rr_df = calculate_rel_rate(
             df=self.result_df, subgroup=self.rollup_pct, baseline=self.uni_pct
@@ -90,10 +86,18 @@ class CalculationTests(unittest.TestCase):
             group_cols=["gender"],
         )
 
+        assert all(
+            col in es_df.columns
+            for col in ["excess_degrees_from_parity", "excess_degrees_from_median_expected"]
+        )
+
         # median rel rate should be 1
         assert (es_df["median_rel_rate_uni"] == 1).all()
 
-        # assert
+        actual_values = es_df["excess_degrees_from_parity"].tolist()
+        for actual, expected in zip(actual_values, self.parity_effect_size):
+            self.assertAlmostEqual(actual, expected)
+
         actual_values = es_df["excess_degrees_from_median_expected"].tolist()
         for actual, expected in zip(actual_values, self.parity_effect_size):
             self.assertAlmostEqual(actual, expected)

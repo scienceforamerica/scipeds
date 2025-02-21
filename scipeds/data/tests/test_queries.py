@@ -843,7 +843,6 @@ class QueryEngineTests(unittest.TestCase):
                         rel_rate=True,
                     )
                     assert "rel_rate" in result.columns
-                    assert "excess_degrees_from_parity" in result.columns
 
     def test_effect_size(self):
         with self.assertWarnsRegex(UserWarning, "IPEDS"):
