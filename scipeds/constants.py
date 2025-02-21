@@ -3,8 +3,11 @@ from pathlib import Path
 
 from platformdirs import user_cache_path
 
+from scipeds import __version__
+
 # DB attributes
-DB_NAME = "ipeds.duckdb"
+VERSION_STR = __version__.replace(".", "_")  # type: ignore[has-type]
+DB_NAME = f"scipeds_{VERSION_STR}.duckdb"
 COMPLETIONS_TABLE = "ipeds_completions_a"
 INSTITUTIONS_TABLE = "ipeds_directory_info"
 CIP_TABLE = "cip_info"

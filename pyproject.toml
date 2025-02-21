@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "scipeds"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
   "cloudpathlib[gs]",
   "duckdb",
