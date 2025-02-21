@@ -1,0 +1,14 @@
+name: auth
+
+on:
+  workflow_dispatch:
+
+jobs:
+  auth:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Authenticate with GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
