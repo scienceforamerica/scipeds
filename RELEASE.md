@@ -11,13 +11,14 @@ Before starting the release process:
 
 Now you are ready to issue the new release:
 
-- Go to the "Actions" tab on the repo   
-    - Click on the `release` workflow, click on "Run workflow"
-    - Enter the version you are releasing
+- Go to the "Actions" tab on the repo
+- Click on the `release` workflow
+- Click on "Run workflow" in the top right
+- Enter the version you are releasing, click "Run"
 
-- What gets automatically updated
-    - Downloading the raw data, reprocessing it, and uploading the duckdb file to GCS with the right version
-    - Build the package and upload it to PyPI
-    - Create a new release tag on GitHub
+What gets automatically updated through the release workflow:
+- Downloading the raw data, reprocessing it, and uploading the duckdb file to GCS with the right version
+- Build the package and upload it to PyPI
+- Create a new release tag on GitHub
 
-- The documentation is automatically updated every time we merge a new PR
+The documentation is automatically updated every time we merge a new PR via this project's autodeploy settings on Render.
