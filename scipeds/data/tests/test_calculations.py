@@ -1,7 +1,6 @@
 import unittest
 
 import pandas as pd
-from pandas.testing import assert_frame_equal
 
 from scipeds.data.enums import Gender
 from scipeds.utils import Rate, calculate_effect_size, calculate_rel_rate
@@ -64,18 +63,6 @@ class CalculationTests(unittest.TestCase):
         )
         self.uni_pct = Rate(
             "uni_pct", numerator="uni_degrees_within_gender", denominator="uni_degrees_total"
-        )
-
-    def _check_result(self, result: pd.DataFrame, expected: pd.DataFrame):
-        """Convenience wrapper for checking accurate query return values
-
-        We ignore categorical values and dtypes"""
-        n_cols = expected.shape[1]
-        assert_frame_equal(
-            result.iloc[:, :n_cols],
-            expected,
-            check_categorical=False,
-            check_index_type=False,
         )
 
     def test_relative_rate(self):
