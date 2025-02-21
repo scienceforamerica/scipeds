@@ -11,6 +11,7 @@ jobs:
   release:
     name: Release ${{ github.event.inputs.RELEASE_VERSION }}
     runs-on: ubuntu-latest
+    environment: PROD
 
     steps:
       - name: Checkout repo
@@ -78,7 +79,7 @@ jobs:
         id: extract-changelog
         uses: sean0x42/markdown-extract@v2.1.0
         with:
-          file: CHANGELOG.md
+          file: HISTORY.md
           pattern: ${{ github.event.inputs.version }}
 
       - name: Write extracted changes to file
