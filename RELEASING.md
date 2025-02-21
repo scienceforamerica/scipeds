@@ -2,9 +2,9 @@
 
 Before starting the release process:
 
-- Merge all PRs to `main`
-- Make sure you've updated the version number in TBD
-- Update the changelog in `HISTORY.md` (manually)
+- Merge all PRs to `main`.
+- Make sure you've updated the version number in `pyproject.toml`.
+- Update the changelog in `HISTORY.md` (manually):
     - Go to `HISTORY.md` and click on "unreleased" to view all the PRs you've merged since the last release
     - Add summary of the things you've added or changed
     - Update the `Unreleased` link and add the current release (at the bottom of `HISTORY.md`)
