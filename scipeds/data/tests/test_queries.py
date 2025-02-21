@@ -37,6 +37,8 @@ class QueryEngineTests(unittest.TestCase):
         self.years = sorted(test_completions.year.unique())
         self.genders = sorted(test_completions.gender.unique())
         self.dfgs = sorted(test_completions[FieldTaxonomy.ncses_detailed_field_group].unique())
+        self.cips = sorted(test_completions.cipcode.unique())
+        self.dhs_stems = [True, False]
         self.race_ethnicities = sorted(test_completions.race_ethnicity.unique())
 
     def _check_result(self, result: pd.DataFrame, expected: pd.DataFrame):
@@ -83,6 +85,10 @@ class QueryEngineTests(unittest.TestCase):
         returned_unitids = inst_table.index
         expected_unitids = [1, 2]
         self.assertCountEqual(returned_unitids, expected_unitids)
+
+        inst_table = self.engine.get_institutions_table(cols=["institution_name"])
+        self.assertCountEqual(inst_table.columns, ["institution_name"])
+        self.assertEqual(inst_table.index.name, "unitid")
 
     def test_rollup_check(self):
         good_rollup = TaxonomyRollup(
@@ -820,3 +826,59 @@ class QueryEngineTests(unittest.TestCase):
             filter_unitids=[2],
         )
         self._check_result(result, expected)
+
+    def test_rel_rate(self):
+        with self.assertWarnsRegex(UserWarning, "IPEDS"):
+            filters = QueryFilters()
+        for grouping in Grouping:
+            for taxonomy in FieldTaxonomy:
+                for yearly in (True, False):
+                    if taxonomy == FieldTaxonomy.original_cip:
+                        continue
+                    result = self.engine.field_totals_by_grouping(
+                        grouping=grouping,
+                        taxonomy=taxonomy,
+                        query_filters=filters,
+                        by_year=yearly,
+                        rel_rate=True,
+                    )
+                    assert "rel_rate" in result.columns
+
+    def test_effect_size(self):
+        with self.assertWarnsRegex(UserWarning, "IPEDS"):
+            filters = QueryFilters()
+        taxonomies = [
+            FieldTaxonomy.ncses_detailed_field_group,
+            FieldTaxonomy.dhs_stem,
+            FieldTaxonomy.cip,
+        ]
+        values = [self.dfgs, self.dhs_stems, self.cips]
+
+        for grouping in Grouping:
+            for taxonomy, vals in zip(taxonomies, values):
+                for yearly in (True, False):
+                    rollup = TaxonomyRollup(taxonomy_name=taxonomy.value, taxonomy_values=vals)
+                    result = self.engine.uni_rollup_by_grouping(
+                        grouping=grouping,
+                        rollup=rollup,
+                        query_filters=filters,
+                        by_year=yearly,
+                        rel_rate=True,
+                        effect_size=True,
+                    )
+                    assert "excess_degrees_from_median_expected" in result.columns
+
+        for grouping in Grouping:
+            for taxonomy in FieldTaxonomy:
+                if taxonomy == FieldTaxonomy.original_cip:
+                    continue
+                for yearly in (True, False):
+                    result = self.engine.uni_field_totals_by_grouping(
+                        grouping=grouping,
+                        taxonomy=taxonomy,
+                        query_filters=filters,
+                        by_year=yearly,
+                        rel_rate=True,
+                        effect_size=True,
+                    )
+                    assert "excess_degrees_from_median_expected" in result.columns

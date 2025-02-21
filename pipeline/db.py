@@ -261,11 +261,14 @@ def fake_completions_data() -> pd.DataFrame:
         "Behavioral Neuroscience",
         "English Literature (British And Commonwealth)",
     ]
+    dhs_stems = [True, True, False]
 
     rows = []
     for unitid in unitids:
         for year in years:
-            for title, sg, fg, dfg, bf, cip in zip(titles, sgs, fgs, dfgs, broad_fields, cips):
+            for title, sg, fg, dfg, bf, cip, dhs_stem in zip(
+                titles, sgs, fgs, dfgs, broad_fields, cips, dhs_stems
+            ):
                 for race_ethn in race_ethns:
                     for gender in genders:
                         count = 1
@@ -280,6 +283,7 @@ def fake_completions_data() -> pd.DataFrame:
                             cipcode=cip,
                             race_ethnicity=race_ethn,
                             gender=gender,
+                            dhs_stem=dhs_stem,
                             n_awards=count,
                         )
                         rows.append(row)

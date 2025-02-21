@@ -353,7 +353,7 @@ ORDER BY {field_group_cols};"""
             df = calculate_rel_rate(df, rollup_pct, uni_pct)
 
         if effect_size:
-            df = calculate_effect_size(df, rollup_pct, uni_pct, group_cols=field_group_cols[2:])
+            df = calculate_effect_size(df, rollup_pct, uni_pct, group_cols=field_group_cols[1:])
 
         return df.set_index(["institution_name"] + field_group_cols)
 
@@ -425,6 +425,6 @@ ORDER BY {field_group_cols};"""
             df = calculate_rel_rate(df, field_pct, uni_pct)
 
         if effect_size:
-            df = calculate_effect_size(df, field_pct, uni_pct, group_cols=field_group_cols[2:])
+            df = calculate_effect_size(df, field_pct, uni_pct, group_cols=field_group_cols[1:])
 
         return df.set_index(["institution_name"] + field_group_cols)

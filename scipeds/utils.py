@@ -72,7 +72,15 @@ def inverse_bounded_ratio_transform(values: npt.NDArray | pd.Series) -> npt.NDAr
         1 -> inf # completely overrepresented
     """
     values = values.copy()
-    transformed = np.array(list(map(lambda x: x + 1 if x <= 0 else 1 / (1 - x), values)))
+
+    def _invert(x):
+        if x <= 0:
+            return x + 1
+        if x < 1:
+            return 1 / (1 - x)
+        return np.inf
+
+    transformed = np.array(list(map(_invert, values)))
     return transformed
 
 
@@ -86,13 +94,6 @@ def calculate_rel_rate(df: pd.DataFrame, subgroup: Rate, baseline: Rate) -> pd.D
     df["fold_rel_rate"] = forward_fold_transform(df["rel_rate"])
     df["bounded_rel_rate"] = bounded_ratio_transform(df["rel_rate"])
 
-    # Calculate distance from parity (and z-score)
-    df["excess_degrees_from_parity"] = df[subgroup.numerator] - (
-        df[baseline.name] * df[subgroup.denominator]
-    )
-    df[["excess_degrees_from_parity_zscore", "excess_degrees_from_parity_pvalue"]] = get_zscore(
-        df, subgroup, baseline
-    )
     return df
 
 
@@ -103,6 +104,13 @@ def calculate_effect_size(
     were the same as the median relative rate in that field among all universities
     """
     df = df.copy()
+    # Calculate distance from parity (and z-score)
+    df["excess_degrees_from_parity"] = df[field_pct.numerator] - (
+        df[uni_pct.name] * df[field_pct.denominator]
+    )
+    df[["excess_degrees_from_parity_zscore", "excess_degrees_from_parity_pvalue"]] = get_zscore(
+        df, field_pct, uni_pct
+    )
     df["median_rel_rate_uni"] = df.groupby(group_cols, observed=True).rel_rate.transform(
         lambda x: x.median()
     )

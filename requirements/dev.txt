@@ -4,5 +4,6 @@
 -r docs.txt
 -r ../pipeline/requirements.txt
 
+coverage
 pip-tools
 twine

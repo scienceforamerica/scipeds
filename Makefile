@@ -60,6 +60,12 @@ test:
 test-pipeline:
 	pytest -v pipeline
 
+## Get test coverage
+.PHONY: test-coverage
+test-coverage:
+	coverage run -m pytest pipeline/ scipeds/
+	coverage report -m 
+
 ## Generate test assets
 .PHONY: test-assets
 test-assets:
