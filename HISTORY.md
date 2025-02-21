@@ -10,6 +10,7 @@
 - Test coverage make command and tests for calculations (#32)
 - GitHub action for releasing (#29)
 - Data versioning for processed duckdb file (#29)
+- RELEASE.md to keep track of release instructions (#35)
 
 ### Changed
 
