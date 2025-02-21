@@ -4,13 +4,10 @@ A Python package for working with [IPEDS](https://nces.ed.gov/ipeds/) [data](htt
 
 Read the full documentation [here](https://scipeds.onrender.com/).
 
-<a target="_blank" href="https://github.com/scienceforamerica/scipeds">
-    <img src="https://img.shields.io/pypi/v/scipeds" />
-</a>
-<img src="https://img.shields.io/pypi/pyversions/scipeds" />
-<a target="_blank" href="https://github.com/scienceforamerica/scipeds/actions/workflows/tests.yml">
-    <img src="https://github.com/scienceforamerica/scipeds/actions/workflows/tests.yml/badge.svg?branch=main" />
-</a>
+
+![PyPI - Version](https://img.shields.io/pypi/v/scipeds)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/scipeds)
+[![tests](https://github.com/scienceforamerica/scipeds/actions/workflows/tests.yml/badge.svg)](https://github.com/scienceforamerica/scipeds/actions/workflows/tests.yml)
 <a target="_blank" href="https://cookiecutter-data-science.drivendata.org/">
     <img src="https://img.shields.io/badge/CCDS-Project%20template-328F97?logo=cookiecutter" />
 </a>
