@@ -194,6 +194,8 @@ def write_db(
     write_completions_to_db(con, completions_dir, verbose=verbose)
     write_institutions_to_db(con, institutions_dir, verbose=verbose)
     con.close()
+    if verbose:
+        logger.info(f"Wrote duckdb file to {output_file}")
 
 
 def create_test_record(race_ethnicity: RaceEthn, gender: Gender, n_awards: int, **kwargs):

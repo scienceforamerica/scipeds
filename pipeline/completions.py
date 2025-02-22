@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pandas as pd
+import numpy as np
 import typer
 from tqdm import tqdm
 
@@ -10,6 +11,11 @@ from pipeline.settings import logger
 from scipeds import constants
 from scipeds.data.enums import AwardLevel, Gender, NCSESSciGroup, RaceEthn
 from scipeds.utils import clean_name
+
+PRE_1995_GENDERONLY_CRACE_CODES = {
+    "crace15": (RaceEthn.total.value, Gender.men.value),
+    "crace16": (RaceEthn.total.value, Gender.women.value)
+}
 
 PRE_2010_CRACE_CODES = {
     "crace01": (RaceEthn.nonres.value, Gender.men.value),
@@ -90,8 +96,7 @@ AWARD_LEVEL_CODES = {
 }
 
 INDEX_COLS = ["unitid", "cipcode", "awlevel", "majornum"]
-ALL_CRACE_CODES = PRE_2010_CRACE_CODES | INTERIM_CRACE_CODES | POST_2010_CRACE_CODES
-
+ALL_CRACE_CODES = PRE_2010_CRACE_CODES | INTERIM_CRACE_CODES | POST_2010_CRACE_CODES | PRE_1995_GENDERONLY_CRACE_CODES
 
 class IPEDSCompletionsReader:
     """Class for reading, cleaning, tidying, and transforming historical IPEDS completions data
@@ -157,13 +162,20 @@ class IPEDSCompletionsReader:
             df["awlevel"].astype(int).map(AWARD_LEVEL_CODES).fillna(AwardLevel.unknown.value)
         )
 
+        # Convert old "no dot" CIP Codes into standard format
+        if year <= 1986:
+            df["cipcode"] = df["cipcode"].apply(lambda c: "0" + c if len(c) == 5 else c)
+            df["cipcode"] = df["cipcode"].apply(lambda c: c[:2] + "." + c[2:])
+
         # Translate CIP codes (and drop generic / total codes)
+        if year <= 1986:
+            print('breakpoint')
         totals_mask = (df["cipcode"] == "99.0000") | (df["cipcode"] == "99")
         if verbose:
             logger.info(
                 f"Removing {totals_mask.sum():,} rows with CIP code of 99, indicating total"
             )
-        df = df[~totals_mask]
+        df = df[~totals_mask].copy()
 
         cip2020_df = self.crosswalk.convert_to_cip2020(year, df["cipcode"])
         df = df.assign(cip2020=cip2020_df["cip2020"])
@@ -176,7 +188,10 @@ class IPEDSCompletionsReader:
         if any(col.startswith("dv") for col in df.columns):
             col_map = INTERIM_CRACE_CODES
         elif any(col.startswith("crace") for col in df.columns):
-            col_map = PRE_2010_CRACE_CODES
+            if len(df.columns) == 2:
+                col_map = PRE_1995_GENDERONLY_CRACE_CODES
+            else:
+                col_map = PRE_2010_CRACE_CODES
         else:
             col_map = POST_2010_CRACE_CODES
 
@@ -218,8 +233,16 @@ class IPEDSCompletionsReader:
         df = self._translate_transform(df, year=year, verbose=verbose)
 
         if add_ncses:
-            # Classifying the "original" codes works best, a few crosswalked codes are missing
+            # Classifying the "original" codes works best for most years, a few crosswalked codes are missing
             nc = self.ncses_classifier.classify(df.index.get_level_values("cipcode"))
+            # Except for pre-1995 data, in which case we need to classify the 2020 cip codes
+            nc2020 = self.ncses_classifier.classify(df.index.get_level_values("cip2020"))
+            for col in nc.columns:
+                nc[col] = np.where(
+                    (nc[col].values == NCSESSciGroup.unknown.value) | (nc[col].values == "Unknown"), 
+                    nc2020[col].values, 
+                    nc[col].values
+                )
             df[nc.columns] = nc.values
 
         if add_dhs:
