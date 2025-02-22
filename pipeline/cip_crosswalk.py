@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple, Union
 
 import pandas as pd
+import fitz
 
 import pipeline.settings
 from scipeds.data.enums import (
@@ -38,6 +39,60 @@ class CIPCodeCrosswalk:
 
         self.year_ranges = sorted(list(self.crosswalk.keys()), key=lambda x: x[0])
         self.min_year = min(yr[0] for yr in self.year_ranges)
+
+
+    def _parse_1990_cip_pdf(self):
+        pdf_path = self.crosswalk_dir / "1985-1999" / "91396_cip_crosswalk.pdf"
+        doc = fitz.open(pdf_path)
+
+        # Extract text from all pages
+        pdf_text = '\n'.join([page.get_text("text") for page in doc])
+        pdf_text = pdf_text.split('\n')
+
+        # Remove column headers
+        pdf_text = pdf_text[16:]
+
+        # Remove the Chapter headers
+        ch_idx_to_remove = {
+            'CHAPTER TWO': [-1, 1], # Ch. 2 has an empty string before the CHAPTER TWO line
+            'CHAPTER THREE': [0, 1], # But Ch. 3 does not
+            'CHAPTER FOUR': [0, 1],
+            'CHAPTER FIVE': [-1, 1],
+            'CHAPTER SIX': [-1, 1]
+        }
+        rm_idxs = []
+        for k, v in ch_idx_to_remove.items():
+            i = pdf_text.index(k)
+            rm_idxs += list(range(i + v[0], i + v[1] + 1))
+        pdf_text = [t for i, t in enumerate(pdf_text) if i not in rm_idxs]
+
+        # Remove deleted CIP codes, they don't have a 90 CIP so there's only two elements for these
+        deleted_idxs = [i for i, t in enumerate(pdf_text) if t == "Deleted"]
+        rm_idxs = []
+        for i in deleted_idxs:
+            rm_idxs += [i-1, i]
+        pdf_text = [t for i, t in enumerate(pdf_text) if i not in rm_idxs]
+
+        # Remove one "Assign to Specific Hobby (see Appendix D)", also doesn't have a 90 CIP
+        deleted_idxs = [i for i, t in enumerate(pdf_text) if t == "Assign to Specific Hobby (see Appendix D)"]
+        rm_idxs = []
+        for i in deleted_idxs:
+            rm_idxs += [i-1, i]
+        pdf_text = [t for i, t in enumerate(pdf_text) if i not in rm_idxs]
+
+        # Remove any remaining empty strings
+        pdf_text = [t for t in pdf_text if t != '']
+
+        # For some reason only this one CIP Title got parsed incorrectly
+        idx = 1004
+        pdf_text = pdf_text[:idx] + [' '.join(pdf_text[idx:idx+8])] + pdf_text[idx+8:]
+
+        pdf_df = pd.DataFrame(
+            data=[pdf_text[::3], pdf_text[1::3], pdf_text[2::3]],
+            index=['CIP85', 'CIP90', 'CIPTITLE90']
+        ).T.replace('', None).dropna(how='all')
+
+        return pdf_df
 
     def _load_2010_to_2020_crosswalk(self):
         """Load and clean/process the CIP2010 -> CIP2020 crosswalk"""
@@ -145,6 +200,15 @@ class CIPCodeCrosswalk:
         df = df[df[origin_col] != df[destination_col]]
         cip_map = dict(zip(df[origin_col], df[destination_col]))
         cip_code_to_title_map = dict(zip(df[destination_col], df[destination_title_col]))
+
+        # Add in the CIP mappings from the pdf
+        df = self._parse_1990_cip_pdf()
+        origin_col = "CIP85"
+        destination_col = "CIP90"
+        destination_title_col = "CIPTITLE90"
+
+        cip_map = {**dict(zip(df[origin_col], df[destination_col])), **cip_map} # Use the Excel in cases where a CIP is in both
+        cip_code_to_title_map = {**dict(zip(df[destination_col], df[destination_title_col])), **cip_code_to_title_map}
 
         mappers = {"cip_map": cip_map, "title_map": cip_code_to_title_map}
 

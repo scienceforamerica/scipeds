@@ -238,11 +238,12 @@ class IPEDSCompletionsReader:
             # Except for pre-1995 data, in which case we need to classify the 2020 cip codes
             nc2020 = self.ncses_classifier.classify(df.index.get_level_values("cip2020"))
             for col in nc.columns:
-                nc[col] = np.where((nc[col].values == NCSESSciGroup.unknown.value) | (nc[col].values == "Unknown"), nc2020[col].values, nc[col].values)
+                nc[col] = np.where(
+                    (nc[col].values == NCSESSciGroup.unknown.value) | (nc[col].values == "Unknown"), 
+                    nc2020[col].values, 
+                    nc[col].values
+                )
             df[nc.columns] = nc.values
-
-            # nc2020 = self.ncses_classifier.classify(df.index.get_level_values("cip2020"))
-            # df[nc.columns] = nc.values | nc2020.values
 
         if add_dhs:
             # Run DHS classification on old + new CIP codes to backstop against crosswalk issues
