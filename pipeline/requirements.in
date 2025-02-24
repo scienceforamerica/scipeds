@@ -1,6 +1,7 @@
 cloudpathlib[gs]
 duckdb
 pandas
+pymupdf
 requests
 tqdm
 typer

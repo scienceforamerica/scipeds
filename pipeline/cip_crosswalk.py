@@ -177,7 +177,7 @@ class CIPCodeCrosswalk:
 
     def _load_1985_to_1990_crosswalk(self):
         """Load and clean/process the CIP1990 -> CIP2000 crosswalk"""
-        year_range = (1984, 1989) 
+        year_range = (1984, 1991) # 1990 and 1991 have some CIP codes that need to get processed through this crosswalk
         file = self.crosswalk_dir / "1985-1999" / "CIP.XLS"
         sheet_name = "Crosswalk_CIP85toCIP90"
         df = pd.read_excel(file, sheet_name=sheet_name, dtype=str)
