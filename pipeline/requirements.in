@@ -4,6 +4,7 @@ loguru
 lxml
 openpyxl
 pandas
+pymupdf
 requests
 tqdm
 typer
