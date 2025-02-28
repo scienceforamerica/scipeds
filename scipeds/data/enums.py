@@ -246,7 +246,7 @@ class NCSESDetailedFieldGroup(str, Enum):
         psych (str): Psychology
         polisci (str): Political Science and Public Administration
         english_lit (str): English and Literature
-        math (str): Mathematics and Statistics
+        math_stats (str): Mathematics and Statistics
         ag_sci (str): Agricultural Sciences
         religion (str): Religion and Theology
         social_sci_other (str): Other Social Sciences
@@ -303,7 +303,7 @@ class NCSESDetailedFieldGroup(str, Enum):
     psych = "Psychology"
     polisci = "Political Science and Public Administration"
     english_lit = "English and Literature"
-    math = "Mathematics and Statistics"
+    math_stats = "Mathematics and Statistics"
     ag_sci = "Agricultural Sciences"
     religion = "Religion and Theology"
     social_sci_other = "Other Social Sciences"
