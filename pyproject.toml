@@ -8,6 +8,7 @@ version = "0.0.4"
 dependencies = [
   "cloudpathlib[gs]",
   "duckdb",
+  "google-cloud-storage",
   "numpy",
   "pandas",
   "platformdirs",

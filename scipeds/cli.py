@@ -3,7 +3,8 @@ from shutil import rmtree
 
 import typer
 from cloudpathlib.exceptions import CloudPathNotExistsError
-from cloudpathlib.gs import GSPath
+from cloudpathlib.gs import GSClient
+from google.cloud.storage.client import Client as StorageClient  # type: ignore
 
 from scipeds.constants import DB_NAME, SCIPEDS_BUCKET, SCIPEDS_CACHE_DIR
 
@@ -45,7 +46,9 @@ def download_db(
         )
         return
 
-    processed_db = GSPath(f"gs://{SCIPEDS_BUCKET}/processed/{DB_NAME}")
+    anonymous_client = StorageClient.create_anonymous_client()
+    gs_client = GSClient(storage_client=anonymous_client)
+    processed_db = gs_client.GSPath(f"gs://{SCIPEDS_BUCKET}/processed/{DB_NAME}")  # type: ignore
 
     if verbose:
         print(f"Downloading pre-processed IPEDS db to {output_path}")
