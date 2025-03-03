@@ -2,6 +2,7 @@
 
 -r lint.txt
 -r docs.txt
+-r ci.txt
 -r ../pipeline/requirements.txt
 
 coverage
