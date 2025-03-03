@@ -212,7 +212,7 @@ def create_test_record(race_ethnicity: RaceEthn, gender: Gender, n_awards: int, 
         ncses_sci_group=kwargs.get("ncses_sci_group", NCSESSciGroup.sci.value),
         ncses_field_group=kwargs.get("ncses_field_group", NCSESFieldGroup.math_cs.value),
         ncses_detailed_field_group=kwargs.get(
-            "ncses_detailed_field_group", NCSESDetailedFieldGroup.math.value
+            "ncses_detailed_field_group", NCSESDetailedFieldGroup.math_stats.value
         ),
         nsf_broad_field=kwargs.get("nsf_broad_field", NSFBroadField.math_cs.value),
         dhs_stem=kwargs.get("dhs_stem", True),
@@ -250,7 +250,7 @@ def fake_completions_data() -> pd.DataFrame:
     sgs = [NCSESSciGroup.sci, NCSESSciGroup.non_sci, NCSESSciGroup.unknown]
     fgs = [NCSESFieldGroup.math_cs, NCSESFieldGroup.psych, NCSESFieldGroup.humanities]
     dfgs = [
-        NCSESDetailedFieldGroup.math,
+        NCSESDetailedFieldGroup.math_stats,
         NCSESDetailedFieldGroup.psych,
         NCSESDetailedFieldGroup.english_lit,
     ]

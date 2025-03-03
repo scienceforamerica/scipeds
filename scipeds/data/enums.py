@@ -422,7 +422,7 @@ NCSES_HIERARCHY = {
         ],
         NCSESFieldGroup.math_cs: [
             NCSESDetailedFieldGroup.compsci,
-            NCSESDetailedFieldGroup.math,
+            NCSESDetailedFieldGroup.math_stats,
         ],
         NCSESFieldGroup.phys_sci: [
             NCSESDetailedFieldGroup.phys_sci_other,

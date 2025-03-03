@@ -169,7 +169,7 @@ class QueryEngineTests(unittest.TestCase):
         # Test the basic group query
         one_stem = TaxonomyRollup(
             taxonomy_name=FieldTaxonomy.ncses_detailed_field_group,
-            taxonomy_values=[NCSESDetailedFieldGroup.math],
+            taxonomy_values=[NCSESDetailedFieldGroup.math_stats],
         )
         with self.assertWarnsRegex(UserWarning, "IPEDS"):
             filters = QueryFilters()
@@ -200,7 +200,7 @@ class QueryEngineTests(unittest.TestCase):
         # Defining both math + psych as stem should change results
         two_stem = TaxonomyRollup(
             taxonomy_name=FieldTaxonomy.ncses_detailed_field_group,
-            taxonomy_values=[NCSESDetailedFieldGroup.math, NCSESDetailedFieldGroup.psych],
+            taxonomy_values=[NCSESDetailedFieldGroup.math_stats, NCSESDetailedFieldGroup.psych],
         )
         # Two majors in STEM = 6 men/women per group per uni
         # Two unis => double
