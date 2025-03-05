@@ -26,6 +26,7 @@ COMPLETION_ZIP_FILENAMES.update(
         for year in range(1999, 1994, -1)
     }
 )
+
 COMPLETION_ZIP_FILENAMES.update(
     {year: f"{BASE_URL}/C{year}_CIP.zip"
      for year in range(1994, 1983, -1)}
@@ -45,7 +46,10 @@ INSTITUTION_METADATA_DATADICTS = {
 CROSSWALK_ZIP_FILENAMES = {
     (2010, 2019): "https://nces.ed.gov/ipeds/cipcode/Files/Crosswalk2010to2020.csv",
     (2000, 2009): "https://nces.ed.gov/ipeds/cipcode/Files/Crosswalk2000to2010.csv",
-    (1985, 1999): "http://nces.ed.gov/pubs2002/cip2000/xls/cip.zip",
+    (1985, 1999): [
+        "http://nces.ed.gov/pubs2002/cip2000/xls/cip.zip",
+        "https://nces.ed.gov/pubs91/91396.pdf"
+    ]
 }
 
 # Directories
@@ -126,12 +130,15 @@ def download_from_ipeds(
         download_and_extract(dict_filename, year_dir, verbose)
 
     # Download crosswalk data
-    for year_range, url in tqdm(CROSSWALK_ZIP_FILENAMES.items()):
+    for year_range, urls in tqdm(CROSSWALK_ZIP_FILENAMES.items()):
         start_year, end_year = year_range
         range_name = "-".join([str(start_year), str(end_year)])
         range_dir = crosswalk_output_dir / range_name
         range_dir.mkdir(parents=True, exist_ok=True)
-        download_and_extract(url, range_dir, verbose)
+        if isinstance(urls, str):
+            urls = [urls]
+        for url in urls:
+            download_and_extract(url, range_dir, verbose)
 
     # Download metadata
     for year, filename in tqdm(INSTITUTION_METADATA_FILENAMES.items()):
