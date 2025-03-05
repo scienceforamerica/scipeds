@@ -13,8 +13,8 @@ from scipeds.data.enums import AwardLevel, Gender, NCSESSciGroup, RaceEthn
 from scipeds.utils import clean_name
 
 PRE_1995_GENDERONLY_CRACE_CODES = {
-    "crace15": (RaceEthn.total.value, Gender.men.value),
-    "crace16": (RaceEthn.total.value, Gender.women.value)
+    "crace15": (RaceEthn.unknown.value, Gender.men.value),
+    "crace16": (RaceEthn.unknown.value, Gender.women.value)
 }
 
 PRE_2010_CRACE_CODES = {
