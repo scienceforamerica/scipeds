@@ -28,8 +28,7 @@ COMPLETION_ZIP_FILENAMES.update(
 )
 
 COMPLETION_ZIP_FILENAMES.update(
-    {year: f"{BASE_URL}/C{year}_CIP.zip"
-     for year in range(1994, 1983, -1)}
+    {year: f"{BASE_URL}/C{year}_CIP.zip" for year in range(1994, 1983, -1)}
 )
 
 COMPLETION_ZIP_FILENAMES[1990] = f"{BASE_URL}/C8990CIP.zip"
@@ -48,8 +47,8 @@ CROSSWALK_ZIP_FILENAMES = {
     (2000, 2009): "https://nces.ed.gov/ipeds/cipcode/Files/Crosswalk2000to2010.csv",
     (1985, 1999): [
         "http://nces.ed.gov/pubs2002/cip2000/xls/cip.zip",
-        "https://nces.ed.gov/pubs91/91396.pdf"
-    ]
+        "https://nces.ed.gov/pubs91/91396.pdf",
+    ],
 }
 
 # Directories
