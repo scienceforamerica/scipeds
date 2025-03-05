@@ -42,7 +42,7 @@ class CIPCodeCrosswalk:
 
 
     def _parse_1990_cip_pdf(self):
-        pdf_path = self.crosswalk_dir / "1985-1999" / "91396.pdf"
+        pdf_path = PIPELINE_ASSETS / "91396_subset.pdf"
         doc = fitz.open(pdf_path)
 
         # Extract text from all pages
