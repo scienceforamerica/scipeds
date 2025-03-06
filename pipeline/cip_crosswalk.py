@@ -398,7 +398,11 @@ class NCSESClassifier:
         sgs = codes.map(self.sg_map).fillna(NCSESSciGroup.unknown.value)
         fgs = codes.map(self.fg_map).fillna(NCSESFieldGroup.unknown.value)
         dfgs = codes.map(self.dfg_map).fillna(NCSESDetailedFieldGroup.unknown.value)
-        nsfs = fgs.map(NSF_REPORT_BROAD_FIELD_MAP).fillna(NSFBroadField.unknown.value)
+        # map nsf broad fields at ncses field group level and sci group level
+        # to accurately capture "unknown" / unclassified cip codes
+        nsf_fgs = fgs.map(NSF_REPORT_BROAD_FIELD_MAP)
+        nsf_sgs = sgs.map(NSF_REPORT_BROAD_FIELD_MAP).fillna(NSFBroadField.unknown.value)
+        nsfs = nsf_fgs.combine_first(nsf_sgs)
         df = pd.concat([codes, titles, sgs, fgs, dfgs, nsfs], axis=1)
         df.columns = pd.Index(
             [

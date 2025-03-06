@@ -462,4 +462,7 @@ NSF_REPORT_BROAD_FIELD_MAP = {
     NCSESFieldGroup.phys_sci: NSFBroadField.phys_earth_sci,
     NCSESFieldGroup.psych: NSFBroadField.soc_behav_sci,
     NCSESFieldGroup.geosci: NSFBroadField.phys_earth_sci,
+    NCSESFieldGroup.unknown: NSFBroadField.unknown,
+    NCSESSciGroup.non_sci: NSFBroadField.non_stem,
+    NCSESSciGroup.unknown: NSFBroadField.unknown,
 }

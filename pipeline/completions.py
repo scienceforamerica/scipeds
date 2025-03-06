@@ -272,7 +272,7 @@ def completions(
 ):
     """Process raw data into interim CSV files with NCSES and DHS STEM classifications"""
     reader = IPEDSCompletionsReader()
-    year_dirs = sorted([d for d in survey_dir.iterdir() if d.is_dir()], reverse=True)
+    year_dirs = sorted([d for d in survey_dir.iterdir() if d.is_dir()], reverse=False)
     all_unclassified = []
     for year_dir in tqdm(year_dirs):
         df = reader.read_year(year_dir, verbose=verbose)
@@ -289,10 +289,16 @@ def completions(
         sci_unknown = df[df.ncses_sci_group == NCSESSciGroup.unknown.value]
         unclassified = sci_unknown.groupby(["cipcode", "cip2020"]).n_awards.sum()
         unclassified_pct = unclassified.sum() / total_awards
+        non_generic = unclassified[unclassified.index.get_level_values(0) != "95.0000"]
+        non_generic_pct = non_generic.sum() / total_awards
         logger.info(
-            f"There were {unclassified.shape[0]:d} unclassified CIP codes "
-            f"({unclassified_pct:.1%} of all awards)"
+            f"There were {unclassified.shape[0]:d} unclassified CIP codes in {year_dir.name}"
         )
+        if not unclassified.empty:
+            logger.info(
+                f"{unclassified_pct:.1%} of all awards unclassified, "
+                f"{non_generic_pct:.1%} of non-95.0000 awards unclassified"
+            )
         all_unclassified.append(unclassified.reset_index())
 
     if verbose:
@@ -309,7 +315,6 @@ def completions(
                 f"There were {unclassified_cips.shape[0]:d} CIP Codes "
                 "not classified in NCSES (showing top 10):"
             )
-            logger.info(unclassified_cips.head(10))
 
 
 if __name__ == "__main__":
