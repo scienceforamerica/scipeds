@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple, Union
 
-import fitz # type: ignore
+import fitz  # type: ignore
 import pandas as pd
 
 import pipeline.settings
