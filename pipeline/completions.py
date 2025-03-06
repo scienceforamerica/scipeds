@@ -284,18 +284,32 @@ def completions(
             logger.info(f"Wrote results for {year_dir.name} to {output_file}")
 
         # Make note of any CIP codes unclassified by NCSES
-        unclassified = df[df.ncses_sci_group == NCSESSciGroup.unknown.value]
-        unclassified = unclassified.reset_index()[["cipcode", "cip2020"]].drop_duplicates()
-        all_unclassified.append(unclassified)
+        df["n_awards"] = df["n_awards"].astype(float).fillna(0)
+        total_awards = df.n_awards.sum()
+        sci_unknown = df[df.ncses_sci_group == NCSESSciGroup.unknown.value]
+        unclassified = sci_unknown.groupby(["cipcode", "cip2020"]).n_awards.sum()
+        unclassified_pct = unclassified.sum() / total_awards
+        logger.info(
+            f"There were {unclassified.shape[0]:d} unclassified CIP codes "
+            f"({unclassified_pct:.1%} of all awards)"
+        )
+        all_unclassified.append(unclassified.reset_index())
 
     if verbose:
-        unclassified = pd.concat(all_unclassified)
-        if unclassified.empty:
+        unclassified_df = pd.concat(all_unclassified)
+        if unclassified_df.empty:
             logger.info("No CIP codes were missing from NCSES classification!")
         else:
-            unclassified = unclassified.drop_duplicates()
-            logger.info("The following CIP Codes were not classified in NCSES")
-            logger.info(unclassified)
+            unclassified_cips = (
+                unclassified_df.groupby(["cipcode", "cip2020"])
+                .n_awards.sum()
+                .sort_values(ascending=False)
+            )
+            logger.info(
+                f"There were {unclassified_cips.shape[0]:d} CIP Codes "
+                "not classified in NCSES (showing top 10):"
+            )
+            logger.info(unclassified_cips.head(10))
 
 
 if __name__ == "__main__":

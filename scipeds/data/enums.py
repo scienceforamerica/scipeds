@@ -357,6 +357,7 @@ class NSFBroadField(str, Enum):
         soc_behav_sci (str): Social and behavioral sciences
         eng (str): Engineering
         non_stem (str): Non-science and engineering
+        unknown (str): Not categorized in NSF broad field classification
     """
 
     ag_and_bio_sci = "Agricultural and biological sciences"
@@ -365,6 +366,7 @@ class NSFBroadField(str, Enum):
     soc_behav_sci = "Social and behavioral sciences"
     eng = "Engineering"
     non_stem = "Non-science and engineering"
+    unknown = "Not categorized in NSF broad field classification"
 
 
 # Hierarchical relationships in the NCSES Alternative Classification
