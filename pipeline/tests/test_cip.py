@@ -56,6 +56,57 @@ class CrosswalkTests(unittest.TestCase):
         assert new_code == new_codes.cip2020.iloc[0]
         assert new_title == new_codes.cip2020_title.iloc[0]
 
+    def test_1985(self):
+        old_code = "07.0103"
+        old_title = "Bookkeeping"
+        new_code = "52.0302"
+        new_title = "Accounting Technology/Technician and Bookkeeping"
+        new_codes = self.cw.convert_to_cip2020(1984, codes=old_code, titles=old_title)
+        assert new_code == new_codes.cip2020.iloc[0]
+        assert new_title == new_codes.cip2020_title.iloc[0]
+
+        new_codes = self.cw.convert_to_cip2020(1989, codes=old_code, titles=old_title)
+        assert new_code == new_codes.cip2020.iloc[0]
+        assert new_title == new_codes.cip2020_title.iloc[0]
+
+    def test_1991_exception(self):
+        # Some CIP codes are present in 1991 data, but not present in the
+        # 1990 -> 2k CIP crosswalk (because they needs to be converted via
+        # the 1985 -> 1990 crosswalk first).
+        # This tests that 1991 data is indeed going through the 85 -> 90
+        # CIP mapper
+        old_code = "06.0401"
+        old_title = "Business Administration"
+        new_code = "52.0201"
+        new_title = "Business Administration and Management, General"
+        new_codes = self.cw.convert_to_cip2020(1991, codes=old_code, titles=old_title)
+        assert new_code == new_codes.cip2020.iloc[0]
+        assert new_title == new_codes.cip2020_title.iloc[0]
+
+    def test_1990_pdf_mapping(self):
+        # Some CIP codes are only in the pdf, make sure those are mapped correctly
+        old_code = "07.0305"
+        old_title = "Business Data Programming"  # from the pdf file
+        new_code = "11.0202"
+        new_title = "Computer Programming, Specific Applications"
+        new_codes = self.cw.convert_to_cip2020(1990, codes=old_code, titles=old_title)
+        assert new_code == new_codes.cip2020.iloc[0]
+        assert new_title == new_codes.cip2020_title.iloc[0]
+
+        # Some codes are in the PDF twice; we want to take the first instance
+        old_code = "17.0499"
+        old_title = "Mental Health/Human Services, Other"
+        new_code = "51.1504"  # maps to 51.0301, not 51.1599, which gets remapped further
+        new_title = "Community Health Services/Liaison/Counseling"
+        new_codes = self.cw.convert_to_cip2020(1990, codes=old_code, titles=old_title)
+        assert new_code == new_codes.cip2020.iloc[0]
+        assert new_title == new_codes.cip2020_title.iloc[0]
+
+    def test_1990_pdf_parsing(self):
+        cw = self.cw.crosswalk[(1984, 1991)]["cip_map"]
+        assert set([len(s) for s in cw.keys()]) == {7}
+        assert set([len(s) for s in cw.values()]) == {7}
+
     def test_missing(self):
         # Missing codes (and titles) should not change
         old_code = "91.9129"
@@ -141,7 +192,7 @@ class NCSESTests(unittest.TestCase):
                         NCSESSciGroup.unknown.value,
                         NCSESFieldGroup.unknown.value,
                         NCSESDetailedFieldGroup.unknown.value,
-                        NSFBroadField.non_stem.value,
+                        NSFBroadField.unknown.value,
                     ],
                     [
                         "Oral/Maxillofacial Surgery",

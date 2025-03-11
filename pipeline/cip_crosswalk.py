@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple, Union
 
+import fitz  # type: ignore
 import pandas as pd
 
 import pipeline.settings
@@ -34,9 +35,69 @@ class CIPCodeCrosswalk:
         self._load_2010_to_2020_crosswalk()
         self._load_2000_to_2010_crosswalk()
         self._load_1990_to_2000_crosswalk()
+        self._load_1985_to_1990_crosswalk()
 
         self.year_ranges = sorted(list(self.crosswalk.keys()), key=lambda x: x[0])
         self.min_year = min(yr[0] for yr in self.year_ranges)
+
+    def _parse_1990_cip_pdf(self):
+        pdf_path = PIPELINE_ASSETS / "91396_subset.pdf"
+        doc = fitz.open(pdf_path)
+
+        # Extract text from all pages
+        pdf_text = "\n".join([page.get_text("text") for page in doc])
+        pdf_text = pdf_text.split("\n")
+
+        # Remove column headers
+        pdf_text = pdf_text[16:]
+
+        # Remove the Chapter headers
+        ch_idx_to_remove = {
+            "CHAPTER TWO": [-1, 1],  # Ch. 2 has an empty string before the CHAPTER TWO line
+            "CHAPTER THREE": [0, 1],  # But Ch. 3 does not
+            "CHAPTER FOUR": [0, 1],
+            "CHAPTER FIVE": [-1, 1],
+            "CHAPTER SIX": [-1, 1],
+        }
+        rm_idxs = []
+        for k, v in ch_idx_to_remove.items():
+            i = pdf_text.index(k)
+            rm_idxs += list(range(i + v[0], i + v[1] + 1))
+        pdf_text = [t for i, t in enumerate(pdf_text) if i not in rm_idxs]
+
+        # Remove deleted CIP codes, they don't have a 90 CIP so there's only two elements for these
+        deleted_idxs = [i for i, t in enumerate(pdf_text) if t == "Deleted"]
+        rm_idxs = []
+        for i in deleted_idxs:
+            rm_idxs += [i - 1, i]
+        pdf_text = [t for i, t in enumerate(pdf_text) if i not in rm_idxs]
+
+        # Remove one "Assign to Specific Hobby (see Appendix D)", also doesn't have a 90 CIP
+        deleted_idxs = [
+            i for i, t in enumerate(pdf_text) if t == "Assign to Specific Hobby (see Appendix D)"
+        ]
+        rm_idxs = []
+        for i in deleted_idxs:
+            rm_idxs += [i - 1, i]
+        pdf_text = [t for i, t in enumerate(pdf_text) if i not in rm_idxs]
+
+        # Remove any remaining empty strings
+        pdf_text = [t for t in pdf_text if t != ""]
+
+        # For some reason only this one CIP Title got parsed incorrectly
+        idx = 1004
+        pdf_text = pdf_text[:idx] + [" ".join(pdf_text[idx : idx + 8])] + pdf_text[idx + 8 :]
+
+        pdf_df = (
+            pd.DataFrame(
+                data=[pdf_text[::3], pdf_text[1::3], pdf_text[2::3]],
+                index=["CIP85", "CIP90", "CIPTITLE90"],
+            )
+            .T.replace("", None)
+            .dropna(how="all")
+        )
+
+        return pdf_df
 
     def _load_2010_to_2020_crosswalk(self):
         """Load and clean/process the CIP2010 -> CIP2020 crosswalk"""
@@ -115,6 +176,54 @@ class CIPCodeCrosswalk:
         cip_code_to_title_map = dict(zip(df[destination_col], df[destination_title_col]))
 
         cip_map.update(self.CORRECTIONS_1990)
+        mappers = {"cip_map": cip_map, "title_map": cip_code_to_title_map}
+
+        self.crosswalk[year_range] = mappers
+
+    def _load_1985_to_1990_crosswalk(self):
+        """Load and clean/process the CIP1990 -> CIP2000 crosswalk"""
+        year_range = (
+            1984,
+            1991,
+        )  # 1990 and 1991 have some CIP codes that need to get processed through this crosswalk
+        file = self.crosswalk_dir / "1985-1999" / "CIP.XLS"
+        sheet_name = "Crosswalk_CIP85toCIP90"
+        df = pd.read_excel(file, sheet_name=sheet_name, dtype=str)
+
+        origin_col = "CIP85"
+        destination_col = "CIP90"
+        destination_title_col = "CIPTITLE90"
+
+        # Get rid of any rows without an original CIP code (new CIP codes),
+        # without a new CIP code (deleted), and indicators for moved/deleted
+        # codes ("report as" and "deleted" in the CIP code column)
+        df = df[
+            (df[origin_col].notna())
+            & (df[destination_col].notna())
+            & ~(df[destination_title_col].str.contains("Deleted"))
+            & ~(df[destination_col].fillna("").str.contains("Report"))
+            & ~(df[destination_col].fillna("").str.contains("Deleted"))
+        ]
+
+        df = df[df[origin_col] != df[destination_col]]
+        cip_map = dict(zip(df[origin_col], df[destination_col]))
+        cip_code_to_title_map = dict(zip(df[destination_col], df[destination_title_col]))
+
+        # Add in the CIP mappings from the pdf
+        df = self._parse_1990_cip_pdf()
+        origin_col = "CIP85"
+        destination_col = "CIP90"
+        destination_title_col = "CIPTITLE90"
+
+        cip_map = {
+            **dict(zip(df[origin_col], df[destination_col])),
+            **cip_map,
+        }  # Use the Excel in cases where a CIP is in both
+        cip_code_to_title_map = {
+            **dict(zip(df[destination_col], df[destination_title_col])),
+            **cip_code_to_title_map,
+        }
+
         mappers = {"cip_map": cip_map, "title_map": cip_code_to_title_map}
 
         self.crosswalk[year_range] = mappers
@@ -289,7 +398,11 @@ class NCSESClassifier:
         sgs = codes.map(self.sg_map).fillna(NCSESSciGroup.unknown.value)
         fgs = codes.map(self.fg_map).fillna(NCSESFieldGroup.unknown.value)
         dfgs = codes.map(self.dfg_map).fillna(NCSESDetailedFieldGroup.unknown.value)
-        nsfs = fgs.map(NSF_REPORT_BROAD_FIELD_MAP).fillna(NSFBroadField.non_stem.value)
+        # map nsf broad fields at ncses field group level and sci group level
+        # to accurately capture "unknown" / unclassified cip codes
+        nsf_fgs = fgs.map(NSF_REPORT_BROAD_FIELD_MAP)
+        nsf_sgs = sgs.map(NSF_REPORT_BROAD_FIELD_MAP).fillna(NSFBroadField.unknown.value)
+        nsfs = nsf_fgs.combine_first(nsf_sgs)
         df = pd.concat([codes, titles, sgs, fgs, dfgs, nsfs], axis=1)
         df.columns = pd.Index(
             [

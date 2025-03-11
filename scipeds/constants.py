@@ -13,7 +13,7 @@ INSTITUTIONS_TABLE = "ipeds_directory_info"
 CIP_TABLE = "cip_info"
 
 # Start and end year for analysis
-START_YEAR = 1995
+START_YEAR = 1984
 END_YEAR = 2023
 
 # Storage bucket

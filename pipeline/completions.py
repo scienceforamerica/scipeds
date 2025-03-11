@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import typer
 from tqdm import tqdm
@@ -10,6 +11,11 @@ from pipeline.settings import logger
 from scipeds import constants
 from scipeds.data.enums import AwardLevel, Gender, NCSESSciGroup, RaceEthn
 from scipeds.utils import clean_name
+
+PRE_1995_GENDERONLY_CRACE_CODES = {
+    "crace15": (RaceEthn.unknown.value, Gender.men.value),
+    "crace16": (RaceEthn.unknown.value, Gender.women.value),
+}
 
 PRE_2010_CRACE_CODES = {
     "crace01": (RaceEthn.nonres.value, Gender.men.value),
@@ -90,7 +96,12 @@ AWARD_LEVEL_CODES = {
 }
 
 INDEX_COLS = ["unitid", "cipcode", "awlevel", "majornum"]
-ALL_CRACE_CODES = PRE_2010_CRACE_CODES | INTERIM_CRACE_CODES | POST_2010_CRACE_CODES
+ALL_CRACE_CODES = (
+    PRE_2010_CRACE_CODES
+    | INTERIM_CRACE_CODES
+    | POST_2010_CRACE_CODES
+    | PRE_1995_GENDERONLY_CRACE_CODES
+)
 
 
 class IPEDSCompletionsReader:
@@ -157,13 +168,20 @@ class IPEDSCompletionsReader:
             df["awlevel"].astype(int).map(AWARD_LEVEL_CODES).fillna(AwardLevel.unknown.value)
         )
 
+        # Convert old "no dot" CIP Codes into standard format
+        if year <= 1986:
+            df["cipcode"] = df["cipcode"].apply(lambda c: "0" + c if len(c) == 5 else c)
+            df["cipcode"] = df["cipcode"].apply(lambda c: c[:2] + "." + c[2:])
+
         # Translate CIP codes (and drop generic / total codes)
+        if year <= 1986:
+            print("breakpoint")
         totals_mask = (df["cipcode"] == "99.0000") | (df["cipcode"] == "99")
         if verbose:
             logger.info(
                 f"Removing {totals_mask.sum():,} rows with CIP code of 99, indicating total"
             )
-        df = df[~totals_mask]
+        df = df[~totals_mask].copy()
 
         cip2020_df = self.crosswalk.convert_to_cip2020(year, df["cipcode"])
         df = df.assign(cip2020=cip2020_df["cip2020"])
@@ -176,7 +194,10 @@ class IPEDSCompletionsReader:
         if any(col.startswith("dv") for col in df.columns):
             col_map = INTERIM_CRACE_CODES
         elif any(col.startswith("crace") for col in df.columns):
-            col_map = PRE_2010_CRACE_CODES
+            if len(df.columns) == 2:
+                col_map = PRE_1995_GENDERONLY_CRACE_CODES
+            else:
+                col_map = PRE_2010_CRACE_CODES
         else:
             col_map = POST_2010_CRACE_CODES
 
@@ -218,8 +239,18 @@ class IPEDSCompletionsReader:
         df = self._translate_transform(df, year=year, verbose=verbose)
 
         if add_ncses:
-            # Classifying the "original" codes works best, a few crosswalked codes are missing
+            # Classifying the "original" codes works best for most years,
+            # a few crosswalked codes are missing
             nc = self.ncses_classifier.classify(df.index.get_level_values("cipcode"))
+            # Except for pre-1995 data, in which case we need to classify the 2020 cip codes
+            nc2020 = self.ncses_classifier.classify(df.index.get_level_values("cip2020"))
+            for col in nc.columns:
+                nc[col] = np.where(
+                    (nc[col].values == NCSESSciGroup.unknown.value)
+                    | (nc[col].values == "Unknown"),
+                    nc2020[col].values,
+                    nc[col].values,
+                )
             df[nc.columns] = nc.values
 
         if add_dhs:
@@ -241,7 +272,7 @@ def completions(
 ):
     """Process raw data into interim CSV files with NCSES and DHS STEM classifications"""
     reader = IPEDSCompletionsReader()
-    year_dirs = sorted([d for d in survey_dir.iterdir() if d.is_dir()], reverse=True)
+    year_dirs = sorted([d for d in survey_dir.iterdir() if d.is_dir()], reverse=False)
     all_unclassified = []
     for year_dir in tqdm(year_dirs):
         df = reader.read_year(year_dir, verbose=verbose)
@@ -253,18 +284,37 @@ def completions(
             logger.info(f"Wrote results for {year_dir.name} to {output_file}")
 
         # Make note of any CIP codes unclassified by NCSES
-        unclassified = df[df.ncses_sci_group == NCSESSciGroup.unknown.value]
-        unclassified = unclassified.reset_index()[["cipcode", "cip2020"]].drop_duplicates()
-        all_unclassified.append(unclassified)
+        df["n_awards"] = df["n_awards"].astype(float).fillna(0)
+        total_awards = df.n_awards.sum()
+        sci_unknown = df[df.ncses_sci_group == NCSESSciGroup.unknown.value]
+        unclassified = sci_unknown.groupby(["cipcode", "cip2020"]).n_awards.sum()
+        unclassified_pct = unclassified.sum() / total_awards
+        non_generic = unclassified[unclassified.index.get_level_values(0) != "95.0000"]
+        non_generic_pct = non_generic.sum() / total_awards
+        logger.info(
+            f"There were {unclassified.shape[0]:d} unclassified CIP codes in {year_dir.name}"
+        )
+        if not unclassified.empty:
+            logger.info(
+                f"{unclassified_pct:.1%} of all awards unclassified, "
+                f"{non_generic_pct:.1%} of non-95.0000 awards unclassified"
+            )
+        all_unclassified.append(unclassified.reset_index())
 
     if verbose:
-        unclassified = pd.concat(all_unclassified)
-        if unclassified.empty:
+        unclassified_df = pd.concat(all_unclassified)
+        if unclassified_df.empty:
             logger.info("No CIP codes were missing from NCSES classification!")
         else:
-            unclassified = unclassified.drop_duplicates()
-            logger.info("The following CIP Codes were not classified in NCSES")
-            logger.info(unclassified)
+            unclassified_cips = (
+                unclassified_df.groupby(["cipcode", "cip2020"])
+                .n_awards.sum()
+                .sort_values(ascending=False)
+            )
+            logger.info(
+                f"There were {unclassified_cips.shape[0]:d} CIP Codes "
+                "not classified in NCSES (showing top 10):"
+            )
 
 
 if __name__ == "__main__":

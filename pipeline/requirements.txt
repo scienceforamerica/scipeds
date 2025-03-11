@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=pipeline/requirements.txt pipeline/requirements.in
 #
-cachetools==5.5.1
+cachetools==5.5.2
     # via google-auth
 certifi==2025.1.31
     # via requests
@@ -12,9 +12,9 @@ charset-normalizer==3.4.1
     # via requests
 click==8.1.8
     # via typer
-cloudpathlib[gs]==0.20.0
+cloudpathlib[gs]==0.21.0
     # via -r pipeline/requirements.in
-duckdb==1.2.0
+duckdb==1.2.1
     # via -r pipeline/requirements.in
 et-xmlfile==2.0.0
     # via openpyxl
@@ -27,9 +27,9 @@ google-auth==2.38.0
     #   google-api-core
     #   google-cloud-core
     #   google-cloud-storage
-google-cloud-core==2.4.1
+google-cloud-core==2.4.2
     # via google-cloud-storage
-google-cloud-storage==3.0.0
+google-cloud-storage==3.1.0
     # via cloudpathlib
 google-crc32c==1.6.0
     # via
@@ -37,7 +37,7 @@ google-crc32c==1.6.0
     #   google-resumable-media
 google-resumable-media==2.7.2
     # via google-cloud-storage
-googleapis-common-protos==1.67.0
+googleapis-common-protos==1.69.0
     # via google-api-core
 idna==3.10
     # via requests
@@ -70,6 +70,8 @@ pyasn1-modules==0.4.1
     # via google-auth
 pygments==2.19.1
     # via rich
+pymupdf==1.25.3
+    # via -r pipeline/requirements.in
 python-dateutil==2.9.0.post0
     # via pandas
 pytz==2025.1
@@ -89,7 +91,7 @@ six==1.17.0
     # via python-dateutil
 tqdm==4.67.1
     # via -r pipeline/requirements.in
-typer==0.15.1
+typer==0.15.2
     # via -r pipeline/requirements.in
 typing-extensions==4.12.2
     # via typer

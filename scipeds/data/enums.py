@@ -37,6 +37,7 @@ class RaceEthn(str, Enum):
         two_or_more (str): Two or more races
         white (str): White
         unknown (str): Unknown
+        total (str): Total
     """
 
     american_indian = "American Indian or Alaska Native"
@@ -355,6 +356,7 @@ class NSFBroadField(str, Enum):
         soc_behav_sci (str): Social and behavioral sciences
         eng (str): Engineering
         non_stem (str): Non-science and engineering
+        unknown (str): Not categorized in NSF broad field classification
     """
 
     ag_and_bio_sci = "Agricultural and biological sciences"
@@ -363,6 +365,7 @@ class NSFBroadField(str, Enum):
     soc_behav_sci = "Social and behavioral sciences"
     eng = "Engineering"
     non_stem = "Non-science and engineering"
+    unknown = "Not categorized in NSF broad field classification"
 
 
 # Hierarchical relationships in the NCSES Alternative Classification
@@ -458,4 +461,7 @@ NSF_REPORT_BROAD_FIELD_MAP = {
     NCSESFieldGroup.phys_sci: NSFBroadField.phys_earth_sci,
     NCSESFieldGroup.psych: NSFBroadField.soc_behav_sci,
     NCSESFieldGroup.geosci: NSFBroadField.phys_earth_sci,
+    NCSESFieldGroup.unknown: NSFBroadField.unknown,
+    NCSESSciGroup.non_sci: NSFBroadField.non_stem,
+    NCSESSciGroup.unknown: NSFBroadField.unknown,
 }
