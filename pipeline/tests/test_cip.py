@@ -192,7 +192,7 @@ class NCSESTests(unittest.TestCase):
                         NCSESSciGroup.unknown.value,
                         NCSESFieldGroup.unknown.value,
                         NCSESDetailedFieldGroup.unknown.value,
-                        NSFBroadField.non_stem.value,
+                        NSFBroadField.unknown.value,
                     ],
                     [
                         "Oral/Maxillofacial Surgery",
