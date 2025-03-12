@@ -60,6 +60,26 @@ jobs:
         run: |
           uv build
 
+      - name: Derive release notes from changelog
+        id: extract-changelog
+        uses: sean0x42/markdown-extract@v2.1.0
+        with:
+          file: HISTORY.md
+          pattern: ${{ github.event.inputs.version }}
+
+      - name: Write extracted changes to file
+        run: |
+          cat <<'__EOF__' > __HISTORY-extracted.md
+          ${{ steps.extract-changelog.outputs.markdown }}
+          __EOF__
+
+      - uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ github.event.inputs.version }}
+          commit: main
+          artifacts: "dist/*.whl,dist/*.tar.gz"
+          bodyFile: "__HISTORY-extracted.md"
+
       - name: Upload build to Test PyPI
         uses: pypa/gh-action-pypi-publish@v1.12.4
         with:
@@ -74,23 +94,3 @@ jobs:
           user: ${{ secrets.PROD_PYPI_USERNAME }}
           password: ${{ secrets.PROD_PYPI_PASSWORD }}
           skip_existing: false
-
-      - name: Derive release notes from changelog
-        id: extract-changelog
-        uses: sean0x42/markdown-extract@v2.1.0
-        with:
-          file: HISTORY.md
-          pattern: ${{ github.event.inputs.version }}
-
-      - name: Write extracted changes to file
-        run: |
-          cat <<'__EOF__' > __CHANGELOG-extracted.md
-          ${{ steps.extract-changelog.outputs.markdown }}
-          __EOF__
-
-      - uses: ncipollo/release-action@v1
-        with:
-          tag: ${{ github.event.inputs.version }}
-          commit: main
-          artifacts: "dist/*.whl,dist/*.tar.gz"
-          bodyFile: "__CHANGELOG-extracted.md"
