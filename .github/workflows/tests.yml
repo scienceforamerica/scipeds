@@ -12,20 +12,20 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python and uv
         uses: drivendataorg/setup-python-uv-action@v1
         with:
           python-version: "3.11"
-        
+
       - name: Install dependencies
         run: |
           uv pip install -r requirements/lint.txt
-      
+
       - name: Run linting
         run: |
           make lint
-  
+
   tests:
     name: Tests (${{ matrix.os }}, Python ${{ matrix.python-version }})
     needs: lint
