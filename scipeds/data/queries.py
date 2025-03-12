@@ -98,4 +98,11 @@ class QueryFilters(BaseModel):
                 "between 2010 and 2011 datasets. For more details, see "
                 "https://nces.ed.gov/ipeds/report-your-data/race-ethnicity-reporting-changes"
             )
+        if (self.start_year < 1995 or self.end_year < 1995) and self.race_ethns != [
+            RaceEthn.unknown
+        ]:
+            warnings.warn(
+                "Race/ethnicity data is not available before 1995. All race/ethnicities "
+                "prior to 1995 are treated as 'unknown'."
+            )
         return self

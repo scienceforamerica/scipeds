@@ -133,6 +133,17 @@ class QueryEngineTests(unittest.TestCase):
         )
         assert result.empty
 
+        # Trying to recover race/ethnicity data prior to 1995 raises a warning
+        with self.assertWarnsRegex(UserWarning, "Race/ethnicity"):
+            filters = QueryFilters(
+                start_year=1991, end_year=1995, race_ethns=[RaceEthn.two_or_more]
+            )
+
+        # Only looking for "unknown" race/ethnicity is okay
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", UserWarning)
+            filters = QueryFilters(start_year=1991, end_year=1995, race_ethns=[RaceEthn.unknown])
+
         result = self.engine.field_totals_by_grouping(
             grouping=Grouping.gender,
             taxonomy=FieldTaxonomy.ncses_field_group,
