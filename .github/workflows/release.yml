@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       RELEASE_VERSION:
-        description: "Version to release (e.g., 0.1.0)"
+        description: "Version to release (e.g., 'v0.1.0')"
         required: true
 
 jobs:
@@ -35,7 +35,10 @@ jobs:
 
       - name: Set environment variable for version
         run: |
-          echo "VERSION_UNDERSCORE=${{ github.event.inputs.RELEASE_VERSION }}" | sed 's/\./_/g' | tee -a $GITHUB_ENV
+          echo "VERSION_UNDERSCORE=${{ github.event.inputs.RELEASE_VERSION }}" \
+          | sed 's/^v//' \
+          | sed 's/\./_/g' \
+          | tee -a $GITHUB_ENV
 
       - name: Make sure duckdb file exists
         run: |
@@ -65,7 +68,7 @@ jobs:
         uses: sean0x42/markdown-extract@v2.1.0
         with:
           file: HISTORY.md
-          pattern: ${{ github.event.inputs.version }}
+          pattern: ${{ github.event.inputs.RELEASE_VERSION }}
 
       - name: Write extracted changes to file
         run: |
@@ -75,7 +78,7 @@ jobs:
 
       - uses: ncipollo/release-action@v1
         with:
-          tag: ${{ github.event.inputs.version }}
+          tag: ${{ github.event.inputs.RELEASE_VERSION }}
           commit: main
           artifacts: "dist/*.whl,dist/*.tar.gz"
           bodyFile: "__HISTORY-extracted.md"
