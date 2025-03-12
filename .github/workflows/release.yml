@@ -11,6 +11,8 @@ jobs:
   release:
     name: Release ${{ github.event.inputs.RELEASE_VERSION }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     environment: PROD
 
     steps:
