@@ -109,7 +109,7 @@ Full `scipeds` documentation can be found at [this link](https://scipeds.onrende
 
 `scipeds` currently supports the following datasets / survey components:
 
-- IPEDS Completions by program (6-digit CIP code), award level, race/ethnicity, and gender from 1995-2023
+- IPEDS Completions by program (6-digit CIP code), award level, race/ethnicity, and gender from 1984-2023
 - IPEDS Institutional Characteristics Directory Information from 2011-2023
 
 #### Completions data preprocessing

@@ -24,8 +24,13 @@ Yes! By cloning the GitHub repository and running the data pipeline.
 
 `scipeds` currently incorporates the following IPEDS survey components: 
 
-- IPEDS Completions Survey 
-- IPEDS Directory Information
+- IPEDS Completions Survey (1984-2023)
+- IPEDS Directory Information (2011-2023)
+
+!!!warning
+    Race/ethnicity is unavailable for completions data from 1984-1994. All race/ethnicity columns have been set to "unknown" during this time period.
+
+    In addition, race/ethnicity encoding changed between 2010 and 2011 data.
 
 ### Which survey variables are included in `scipeds`?
 
