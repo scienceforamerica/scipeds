@@ -504,6 +504,33 @@ class QueryEngineTests(unittest.TestCase):
         )
         self._check_result(result, expected)
 
+        # Test unitid filter
+        # 1 person per major per race+gender
+        # 6 people per major per total
+        # 3 people per uni per race+gender
+        # 18 people per uni total
+        # 2 unis
+        # 2 years => double
+        subfields = [NCSESDetailedFieldGroup.math_stats, NCSESDetailedFieldGroup.psych]
+
+        subtotals = np.array([1, 6, 3, 18]) * 2 * 2
+        expected = pd.DataFrame(
+            columns=index_cols + value_cols,
+            data=[
+                [field, race, gender] + subtotals.tolist()
+                for field in subfields
+                for race in self.race_ethnicities
+                for gender in self.genders
+            ],
+        ).set_index(index_cols)
+        result = self.engine.field_totals_by_grouping(
+            grouping=Grouping.intersectional,
+            taxonomy=FieldTaxonomy.ncses_detailed_field_group,
+            taxonomy_values=subfields,
+            query_filters=filters,
+        )
+        self._check_result(result, expected)
+
     def test_uni_query(self):
         # Test gender
         with self.assertWarnsRegex(UserWarning, "IPEDS"):

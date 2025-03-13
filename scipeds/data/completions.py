@@ -276,6 +276,8 @@ ORDER BY {field_group_cols};"""
             unitids=filter_unitids,
         )
         query_params = query_filters.model_dump()
+        if taxonomy_values:
+            query_params["taxonomy_values"] = taxonomy_values
         df = self.get_df_from_query(query, query_params=query_params, show_query=show_query)
 
         if rel_rate:
