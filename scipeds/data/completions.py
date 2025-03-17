@@ -24,14 +24,17 @@ WITH filtered AS (
         AND majornum IN (SELECT UNNEST($majornums))
         {unitid_filter}
 ), 
-field_group_totals AS (
-    {field_group_total_select}
-), 
 field_totals AS (
     {field_total_select}
 ), 
 group_totals AS (
     {group_total_select}
+), 
+valid_combinations AS (
+    {valid_combo_select}
+),
+field_group_totals AS (
+    {field_group_total_select}
 ), 
 totals AS (
     {total_select}
@@ -39,11 +42,11 @@ totals AS (
 SELECT
     {institution_name}
     {field_group_cols},
-    {field_group_degrees},
+    COALESCE({field_group_degrees}, 0)::INT64 as {field_group_degrees},
     {field_total_degrees},
     {group_total_degrees},
     {total_degrees},
-FROM field_group_totals
+FROM valid_combinations
 {joins}
 ORDER BY {field_group_cols};"""
 
@@ -115,10 +118,23 @@ ORDER BY {field_group_cols};"""
         field_total_select = format_subquery(
             field_total_cols, f"{agg_type}_degrees_total", taxonomy_filter
         )
+        field_total_cols = field_total_cols + [f"{agg_type}_degrees_total"]
         group_total_select = format_subquery(
             group_total_cols, f"uni_degrees_{grouping.label_suffix}"
         )
+        group_total_cols = group_total_cols + [f"uni_degrees_{grouping.label_suffix}"]
         total_select = format_subquery(total_cols, "uni_degrees_total")
+
+        combo_using = f"USING ({','.join(total_cols)})" if total_cols else ""
+        combo_cols = set(group_total_cols) - set(field_total_cols)
+        field_cols = ["field_totals." + col for col in field_total_cols]
+        group_cols = ["group_totals." + col for col in combo_cols]
+        valid_combo_select = f"""
+        SELECT {", ".join([*field_cols]) if field_cols else "field_totals.*"}
+        ,{", ".join([*group_cols])}
+        FROM field_totals
+        {"CROSS" if not combo_using else ""} JOIN group_totals {combo_using}
+        """
 
         def format_join(cols: list[str], var_name: str, table_name: str) -> tuple[str, str]:
             if cols:
@@ -128,19 +144,22 @@ ORDER BY {field_group_cols};"""
                 join_str = f",{table_name}"
             return var_name, join_str
 
-        fgt_var, _ = format_join(
+        fgt_var, fgt_join = format_join(
             field_group_cols, f"{agg_type}_degrees_{grouping.label_suffix}", "field_group_totals"
         )
-        ft_var, ft_join = format_join(
-            field_total_cols, f"{agg_type}_degrees_total", "field_totals"
+        ft_var, _ = format_join(
+            field_total_cols, f"{agg_type}_degrees_total", "valid_combinations"
         )
-        gt_var, gt_join = format_join(
-            group_total_cols, f"uni_degrees_{grouping.label_suffix}", "group_totals"
+        gt_var, _ = format_join(
+            group_total_cols, f"uni_degrees_{grouping.label_suffix}", "valid_combinations"
         )
         t_var, t_join = format_join(total_cols, "uni_degrees_total", "totals")
-        all_joins = list(sorted([ft_join, gt_join, t_join], reverse=True))
+
+        all_joins = [fgt_join, t_join]
+
         if "unitid" in total_cols:
             all_joins.append(f"LEFT JOIN {INSTITUTIONS_TABLE} USING (unitid)")
+
         joins = "\n".join(all_joins)
 
         institution_name = (
@@ -155,6 +174,7 @@ ORDER BY {field_group_cols};"""
             field_group_total_select=field_group_total_select,
             field_total_select=field_total_select,
             group_total_select=group_total_select,
+            valid_combo_select=valid_combo_select,
             total_select=total_select,
             field_group_degrees=fgt_var,
             field_total_degrees=ft_var,
