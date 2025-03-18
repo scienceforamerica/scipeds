@@ -81,7 +81,24 @@ ORDER BY {field_group_cols};"""
         taxonomy: str | None = None,
         unitids: list[int] | None = None,
     ) -> str:
-        """Format the query according to the provided arguments
+        """Format the query according to the provided arguments.
+
+        The idea here is to flexibly accept different sub-aggregations across
+        groups, field taxonomies, fields, unitids, and years. Because going from
+        0 to 1 level of aggregation changes the appropriate SQL syntax, we have
+        various ways of formatting and joining together sub-queries based on the
+        selected combination of aggregations.
+
+        In addition, rows in the completions table are only stored when they are
+        non-zero, meaning that we may not get groupings that are relevant to our
+        chosen level of aggregation. For example, if we aggregate on race/ethnicity
+        and an institution has completions from all race/ethnicity groups but only
+        completions in engineering from some race/ethnicity groups, the missing
+        groups will be missing from the returned result even though we wish to observe
+        those values and compute relevant aggregations such as relative rate. To address
+        this, we compute as an intermediate CTE the "valid combinations" of field and grouping
+        and left join to that CTE, filling in missing values with 0. This ensures that we
+        see all relevant groupings regardless of missing values.
 
         Args:
             grouping (Grouping): How to group the data
