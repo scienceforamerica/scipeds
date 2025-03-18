@@ -96,14 +96,26 @@ ORDER BY {field_group_cols};"""
         Returns:
             str: Formatted query
         """
+        # Filter to only the taxonomy values we want to keep if specified
         taxonomy_filter = (
             f"WHERE {taxonomy} IN (SELECT UNNEST($taxonomy_values))" if taxonomy else ""
         )
+        # Filter to only the institutions we want to keep if specified
         unitid_filter = (
             f"AND unitid IN ({', '.join([str(unitid) for unitid in unitids])})" if unitids else ""
         )
 
         def format_subquery(cols: list[str], name: str, filter: str = "") -> str:
+            """Aggregate degrees, grouping by relevant columns, into a specified variable.
+
+            Args:
+                cols (list[str]): Columns to select and group by
+                name (str): Output variable name
+                filter (str, optional): Values to filter out of pre-filtered table. Defaults to "".
+
+            Returns:
+                str: Formatted subquery
+            """
             selection = ", ".join(cols) + "," if cols else ""
             groupby = f"GROUP BY {', '.join(cols)}" if cols else ""
             return (
@@ -113,6 +125,8 @@ ORDER BY {field_group_cols};"""
                 f"{groupby}"
             )
 
+        # Obtain the various subqueries for grouping by each of
+        # field, grouping, field & grouping, and total
         field_group_total_select = format_subquery(
             field_group_cols, f"{agg_type}_degrees_{grouping.label_suffix}", taxonomy_filter
         )
@@ -126,6 +140,14 @@ ORDER BY {field_group_cols};"""
         group_total_cols = group_total_cols + [f"uni_degrees_{grouping.label_suffix}"]
         total_select = format_subquery(total_cols, "uni_degrees_total")
 
+        # Identify valid combinations of field and grouping so that
+        # relevant groupings are created even if they have no completions
+        #
+        # For example, if an institution has both men & women with completions
+        # at the bachelor's level, but only men at the field level,
+        # we should include a row for men and women at the field level so that
+        # the appropriate relative rate is calculated - otherwise, the institution
+        # will appear missing from the data.
         combo_using = f"USING ({','.join(total_cols)})" if total_cols else ""
         combo_cols = set(group_total_cols) - set(field_total_cols)
         field_cols = ["field_totals." + col for col in field_total_cols]
@@ -138,6 +160,16 @@ ORDER BY {field_group_cols};"""
         """
 
         def format_join(cols: list[str], var_name: str, table_name: str) -> tuple[str, str]:
+            """Format the appropriate join string for each CTE
+
+            Args:
+                cols (list[str]): Columns to join on
+                var_name (str): Variable name
+                table_name (str): CTE table name
+
+            Returns:
+                tuple[str, str]: Variable name, formatted join query
+            """
             if cols:
                 join_str = f"LEFT JOIN {table_name} USING ({', '.join(cols)})"
             else:
@@ -145,6 +177,7 @@ ORDER BY {field_group_cols};"""
                 join_str = f",{table_name}"
             return var_name, join_str
 
+        # Format the joins for each sub-aggregation
         fgt_var, fgt_join = format_join(
             field_group_cols, f"{agg_type}_degrees_{grouping.label_suffix}", "field_group_totals"
         )
