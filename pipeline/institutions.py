@@ -18,7 +18,8 @@ class IPEDSInstitutionCharacteristicsReader:
       1. Translate the shortened/abbreviated variable names (var_name) to their corresponding
          longer description (var_label)
       2. Translate the enumerated values of codes (code_val) to their corresponding string values
-         (code_label)"""
+         (code_label)
+    """
 
     # Details for variables (the Excel sheet where definitions live
     # and the columns for constructing key-value pairs)

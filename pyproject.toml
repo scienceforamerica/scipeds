@@ -51,7 +51,10 @@ src = ["scipeds"]
 include = ["scipeds/**/*.py", "docs/**/*.py", "pipeline/**/*.py"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I"]
+select = ["D417", "E", "F", "I"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["scipeds"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"

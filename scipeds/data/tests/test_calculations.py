@@ -14,7 +14,8 @@ class CalculationTests(unittest.TestCase):
         Big school is over-represented in a field by 1.1x, small school is under-represented by 2x,
         medium school is at parity
         Use gender, for now
-        TODO: Add tests for other fields / groupings"""
+        TODO: Add tests for other fields / groupings
+        """
         unitids = [1, 2, 3]
         names = ["Big School", "Medium School", "Small School"]
         gender = Gender.women

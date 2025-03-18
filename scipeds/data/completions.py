@@ -85,6 +85,7 @@ ORDER BY {field_group_cols};"""
 
         Args:
             grouping (Grouping): How to group the data
+            agg_type (str): Type of aggregation ("rollup" or "field")
             field_group_cols (list[str]): Lowest level of aggregation
             field_total_cols (list[str]): Field-only aggregation
             group_total_cols (list[str]): Grouping-only aggregation
@@ -208,6 +209,8 @@ ORDER BY {field_group_cols};"""
                 also adds associated variables. Default: False
             show_query (bool): Whether to print the query and parameters before executing.
                 Default: False
+            filter_unitids (list[int], Optional): List of unitids to filter on. Default: None
+
         Returns:
             pd.DataFrame: Completions within fields in the roll-up,
                 aggregated by chosen grouping and subject to filters
@@ -266,11 +269,13 @@ ORDER BY {field_group_cols};"""
             grouping (Grouping): How to group the data
             taxonomy (FieldTaxonomy): Taxonomy to aggregate over
             query_filters (QueryFilters): Pre-aggregation filters to apply to raw data
+            taxonomy_values (list[str]): Optional list of field values to filter on. Default: None
             by_year (bool): Whether to group by year (True) or aggregate over all years (False).
                 Default: False
             rel_rate (bool): Whether to calculate relative representation. Default: False
             show_query (bool): Whether to print the query and parameters before executing.
                 Default: False
+            filter_unitids (list[int], Optional): List of unitids to filter on. Default: None
 
         Returns:
             pd.DataFrame: Relative rates by grouping for each field in taxonomy
@@ -334,6 +339,7 @@ ORDER BY {field_group_cols};"""
             effect_size (bool): Whether to compute effect size. Default: False
             show_query (bool): Whether to print the query and parameters before executing.
                 Default: False
+            filter_unitids (list[int], Optional): List of unitids to filter on. Default: None
 
         Returns:
             pd.DataFrame: Completions in fields contained within roll-up, aggregated by
@@ -406,6 +412,7 @@ ORDER BY {field_group_cols};"""
             effect_size (bool): Whether to compute effect size. Default: False
             show_query (bool): Whether to print the query and parameters before executing.
                 Default: False
+            filter_unitids (list[int], Optional): List of unitids to filter on. Default: None
 
         Returns:
             pd.DataFrame: Completions in each field in the taxonomy, aggregated by

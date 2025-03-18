@@ -44,7 +44,8 @@ class QueryEngineTests(unittest.TestCase):
     def _check_result(self, result: pd.DataFrame, expected: pd.DataFrame):
         """Convenience wrapper for checking accurate query return values
 
-        We ignore categorical values and dtypes"""
+        We ignore categorical values and dtypes
+        """
         n_cols = expected.shape[1]
         assert_frame_equal(
             result.iloc[:, :n_cols],
