@@ -24,14 +24,17 @@ WITH filtered AS (
         AND majornum IN (SELECT UNNEST($majornums))
         {unitid_filter}
 ), 
-field_group_totals AS (
-    {field_group_total_select}
-), 
 field_totals AS (
     {field_total_select}
 ), 
 group_totals AS (
     {group_total_select}
+), 
+valid_combinations AS (
+    {valid_combo_select}
+),
+field_group_totals AS (
+    {field_group_total_select}
 ), 
 totals AS (
     {total_select}
@@ -39,11 +42,11 @@ totals AS (
 SELECT
     {institution_name}
     {field_group_cols},
-    {field_group_degrees},
+    COALESCE({field_group_degrees}, 0)::INT64 as {field_group_degrees},
     {field_total_degrees},
     {group_total_degrees},
     {total_degrees},
-FROM field_group_totals
+FROM valid_combinations
 {joins}
 ORDER BY {field_group_cols};"""
 
@@ -78,10 +81,28 @@ ORDER BY {field_group_cols};"""
         taxonomy: str | None = None,
         unitids: list[int] | None = None,
     ) -> str:
-        """Format the query according to the provided arguments
+        """Format the query according to the provided arguments.
+
+        The idea here is to flexibly accept different sub-aggregations across
+        groups, field taxonomies, fields, unitids, and years. Because going from
+        0 to 1 level of aggregation changes the appropriate SQL syntax, we have
+        various ways of formatting and joining together sub-queries based on the
+        selected combination of aggregations.
+
+        In addition, rows in the completions table are only stored when they are
+        non-zero, meaning that we may not get groupings that are relevant to our
+        chosen level of aggregation. For example, if we aggregate on race/ethnicity
+        and an institution has completions from all race/ethnicity groups but only
+        completions in engineering from some race/ethnicity groups, the missing
+        groups will be missing from the returned result even though we wish to observe
+        those values and compute relevant aggregations such as relative rate. To address
+        this, we compute as an intermediate CTE the "valid combinations" of field and grouping
+        and left join to that CTE, filling in missing values with 0. This ensures that we
+        see all relevant groupings regardless of missing values.
 
         Args:
             grouping (Grouping): How to group the data
+            agg_type (str): Type of aggregation ("rollup" or "field")
             field_group_cols (list[str]): Lowest level of aggregation
             field_total_cols (list[str]): Field-only aggregation
             group_total_cols (list[str]): Grouping-only aggregation
@@ -92,14 +113,26 @@ ORDER BY {field_group_cols};"""
         Returns:
             str: Formatted query
         """
+        # Filter to only the taxonomy values we want to keep if specified
         taxonomy_filter = (
             f"WHERE {taxonomy} IN (SELECT UNNEST($taxonomy_values))" if taxonomy else ""
         )
+        # Filter to only the institutions we want to keep if specified
         unitid_filter = (
             f"AND unitid IN ({', '.join([str(unitid) for unitid in unitids])})" if unitids else ""
         )
 
         def format_subquery(cols: list[str], name: str, filter: str = "") -> str:
+            """Aggregate degrees, grouping by relevant columns, into a specified variable.
+
+            Args:
+                cols (list[str]): Columns to select and group by
+                name (str): Output variable name
+                filter (str, optional): Values to filter out of pre-filtered table. Defaults to "".
+
+            Returns:
+                str: Formatted subquery
+            """
             selection = ", ".join(cols) + "," if cols else ""
             groupby = f"GROUP BY {', '.join(cols)}" if cols else ""
             return (
@@ -109,18 +142,51 @@ ORDER BY {field_group_cols};"""
                 f"{groupby}"
             )
 
+        # Obtain the various subqueries for grouping by each of
+        # field, grouping, field & grouping, and total
         field_group_total_select = format_subquery(
             field_group_cols, f"{agg_type}_degrees_{grouping.label_suffix}", taxonomy_filter
         )
         field_total_select = format_subquery(
             field_total_cols, f"{agg_type}_degrees_total", taxonomy_filter
         )
+        field_total_cols = field_total_cols + [f"{agg_type}_degrees_total"]
         group_total_select = format_subquery(
             group_total_cols, f"uni_degrees_{grouping.label_suffix}"
         )
+        group_total_cols = group_total_cols + [f"uni_degrees_{grouping.label_suffix}"]
         total_select = format_subquery(total_cols, "uni_degrees_total")
 
+        # Identify valid combinations of field and grouping so that
+        # relevant groupings are created even if they have no completions
+        #
+        # For example, if an institution has both men & women with completions
+        # at the bachelor's level, but only men at the field level,
+        # we should include a row for men and women at the field level so that
+        # the appropriate relative rate is calculated - otherwise, the institution
+        # will appear missing from the data.
+        combo_using = f"USING ({','.join(total_cols)})" if total_cols else ""
+        combo_cols = set(group_total_cols) - set(field_total_cols)
+        field_cols = ["field_totals." + col for col in field_total_cols]
+        group_cols = ["group_totals." + col for col in combo_cols]
+        valid_combo_select = f"""
+        SELECT {", ".join([*field_cols]) if field_cols else "field_totals.*"}
+        ,{", ".join([*group_cols])}
+        FROM field_totals
+        {"CROSS" if not combo_using else ""} JOIN group_totals {combo_using}
+        """
+
         def format_join(cols: list[str], var_name: str, table_name: str) -> tuple[str, str]:
+            """Format the appropriate join string for each CTE
+
+            Args:
+                cols (list[str]): Columns to join on
+                var_name (str): Variable name
+                table_name (str): CTE table name
+
+            Returns:
+                tuple[str, str]: Variable name, formatted join query
+            """
             if cols:
                 join_str = f"LEFT JOIN {table_name} USING ({', '.join(cols)})"
             else:
@@ -128,19 +194,23 @@ ORDER BY {field_group_cols};"""
                 join_str = f",{table_name}"
             return var_name, join_str
 
-        fgt_var, _ = format_join(
+        # Format the joins for each sub-aggregation
+        fgt_var, fgt_join = format_join(
             field_group_cols, f"{agg_type}_degrees_{grouping.label_suffix}", "field_group_totals"
         )
-        ft_var, ft_join = format_join(
-            field_total_cols, f"{agg_type}_degrees_total", "field_totals"
+        ft_var, _ = format_join(
+            field_total_cols, f"{agg_type}_degrees_total", "valid_combinations"
         )
-        gt_var, gt_join = format_join(
-            group_total_cols, f"uni_degrees_{grouping.label_suffix}", "group_totals"
+        gt_var, _ = format_join(
+            group_total_cols, f"uni_degrees_{grouping.label_suffix}", "valid_combinations"
         )
         t_var, t_join = format_join(total_cols, "uni_degrees_total", "totals")
-        all_joins = list(sorted([ft_join, gt_join, t_join], reverse=True))
+
+        all_joins = [fgt_join, t_join]
+
         if "unitid" in total_cols:
             all_joins.append(f"LEFT JOIN {INSTITUTIONS_TABLE} USING (unitid)")
+
         joins = "\n".join(all_joins)
 
         institution_name = (
@@ -155,6 +225,7 @@ ORDER BY {field_group_cols};"""
             field_group_total_select=field_group_total_select,
             field_total_select=field_total_select,
             group_total_select=group_total_select,
+            valid_combo_select=valid_combo_select,
             total_select=total_select,
             field_group_degrees=fgt_var,
             field_total_degrees=ft_var,
@@ -188,6 +259,8 @@ ORDER BY {field_group_cols};"""
                 also adds associated variables. Default: False
             show_query (bool): Whether to print the query and parameters before executing.
                 Default: False
+            filter_unitids (list[int], Optional): List of unitids to filter on. Default: None
+
         Returns:
             pd.DataFrame: Completions within fields in the roll-up,
                 aggregated by chosen grouping and subject to filters
@@ -246,11 +319,13 @@ ORDER BY {field_group_cols};"""
             grouping (Grouping): How to group the data
             taxonomy (FieldTaxonomy): Taxonomy to aggregate over
             query_filters (QueryFilters): Pre-aggregation filters to apply to raw data
+            taxonomy_values (list[str]): Optional list of field values to filter on. Default: None
             by_year (bool): Whether to group by year (True) or aggregate over all years (False).
                 Default: False
             rel_rate (bool): Whether to calculate relative representation. Default: False
             show_query (bool): Whether to print the query and parameters before executing.
                 Default: False
+            filter_unitids (list[int], Optional): List of unitids to filter on. Default: None
 
         Returns:
             pd.DataFrame: Relative rates by grouping for each field in taxonomy
@@ -314,6 +389,7 @@ ORDER BY {field_group_cols};"""
             effect_size (bool): Whether to compute effect size. Default: False
             show_query (bool): Whether to print the query and parameters before executing.
                 Default: False
+            filter_unitids (list[int], Optional): List of unitids to filter on. Default: None
 
         Returns:
             pd.DataFrame: Completions in fields contained within roll-up, aggregated by
@@ -386,6 +462,7 @@ ORDER BY {field_group_cols};"""
             effect_size (bool): Whether to compute effect size. Default: False
             show_query (bool): Whether to print the query and parameters before executing.
                 Default: False
+            filter_unitids (list[int], Optional): List of unitids to filter on. Default: None
 
         Returns:
             pd.DataFrame: Completions in each field in the taxonomy, aggregated by

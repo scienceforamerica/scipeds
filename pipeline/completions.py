@@ -106,7 +106,8 @@ ALL_CRACE_CODES = (
 
 class IPEDSCompletionsReader:
     """Class for reading, cleaning, tidying, and transforming historical IPEDS completions data
-    and to decorate with additional data like STEM classification"""
+    and to decorate with additional data like STEM classification
+    """
 
     def __init__(self):
         self.crosswalk = CIPCodeCrosswalk()
