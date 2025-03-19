@@ -132,7 +132,7 @@ def write_completions_to_db(
     # Create CIP table
     con.sql(f"""CREATE TABLE {CIP_TABLE} AS 
     (
-        SELECT DISTINCT ON (cip2020)
+        SELECT DISTINCT 
             cip2020,
             cip_title,
             ncses_sci_group,
@@ -141,6 +141,7 @@ def write_completions_to_db(
             nsf_broad_field,
             dhs_stem
         FROM {COMPLETIONS_TABLE}
+        ORDER BY cip2020
     );
     """)
 

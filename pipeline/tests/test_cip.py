@@ -16,6 +16,7 @@ from scipeds.data.enums import (
 class CrosswalkTests(unittest.TestCase):
     def setUp(self):
         self.cw = CIPCodeCrosswalk()
+        self.nc = NCSESClassifier()
 
     def test_2010(self):
         old_code = "22.0303"
@@ -30,6 +31,28 @@ class CrosswalkTests(unittest.TestCase):
         assert new_code == new_codes.cip2020.iloc[0]
         assert new_title == new_codes.cip2020_title.iloc[0]
 
+        classification = self.nc.classify([old_code], codes_2020=[new_code])
+        expected = pd.DataFrame(
+            index=[old_code],
+            data=[[
+                new_title,
+                NCSESSciGroup.non_sci.value,
+                NCSESFieldGroup.business_and_mgmt.value,
+                NCSESDetailedFieldGroup.business_and_mgmt.value,
+                NSFBroadField.non_stem.value,
+            ]
+            ],
+            columns=[
+                "cip_title",
+                FieldTaxonomy.ncses_sci_group.value,
+                FieldTaxonomy.ncses_field_group.value,
+                FieldTaxonomy.ncses_detailed_field_group.value,
+                FieldTaxonomy.nsf_broad_field.value,
+            ],
+        )
+        expected.index.name="cipcode"
+        assert_frame_equal(classification, expected)
+
     def test_2000(self):
         old_code = "26.0405"
         old_title = "Neuroanatomy"
@@ -42,6 +65,28 @@ class CrosswalkTests(unittest.TestCase):
         new_codes = self.cw.convert_to_cip2020(2009, codes=old_code, titles=old_title)
         assert new_code == new_codes.cip2020.iloc[0]
         assert new_title == new_codes.cip2020_title.iloc[0]
+        
+        classification = self.nc.classify([old_code], codes_2020=[new_code])
+        expected = pd.DataFrame(
+            index=[old_code],
+            data=[[
+                new_title,
+                NCSESSciGroup.sci.value,
+                NCSESFieldGroup.sci_life_sci.value,
+                NCSESDetailedFieldGroup.bio.value,
+                NSFBroadField.ag_and_bio_sci.value,
+            ]
+            ],
+            columns=[
+                "cip_title",
+                FieldTaxonomy.ncses_sci_group.value,
+                FieldTaxonomy.ncses_field_group.value,
+                FieldTaxonomy.ncses_detailed_field_group.value,
+                FieldTaxonomy.nsf_broad_field.value,
+            ],
+        )
+        expected.index.name="cipcode"
+        assert_frame_equal(classification, expected)
 
     def test_1990(self):
         old_code = "52.0405"
@@ -55,6 +100,28 @@ class CrosswalkTests(unittest.TestCase):
         new_codes = self.cw.convert_to_cip2020(1999, codes=old_code, titles=old_title)
         assert new_code == new_codes.cip2020.iloc[0]
         assert new_title == new_codes.cip2020_title.iloc[0]
+        
+        classification = self.nc.classify([old_code], codes_2020=[new_code])
+        expected = pd.DataFrame(
+            index=[old_code],
+            data=[[
+                new_title,
+                NCSESSciGroup.non_sci.value,
+                NCSESFieldGroup.business_and_mgmt.value,
+                NCSESDetailedFieldGroup.business_and_mgmt.value,
+                NSFBroadField.non_stem.value,
+            ]
+            ],
+            columns=[
+                "cip_title",
+                FieldTaxonomy.ncses_sci_group.value,
+                FieldTaxonomy.ncses_field_group.value,
+                FieldTaxonomy.ncses_detailed_field_group.value,
+                FieldTaxonomy.nsf_broad_field.value,
+            ],
+        )
+        expected.index.name="cipcode"
+        assert_frame_equal(classification, expected)
 
     def test_1985(self):
         old_code = "07.0103"
@@ -68,6 +135,28 @@ class CrosswalkTests(unittest.TestCase):
         new_codes = self.cw.convert_to_cip2020(1989, codes=old_code, titles=old_title)
         assert new_code == new_codes.cip2020.iloc[0]
         assert new_title == new_codes.cip2020_title.iloc[0]
+        
+        classification = self.nc.classify([old_code], codes_2020=[new_code])
+        expected = pd.DataFrame(
+            index=[old_code],
+            data=[[
+                new_title,
+                NCSESSciGroup.non_sci.value,
+                NCSESFieldGroup.business_and_mgmt.value,
+                NCSESDetailedFieldGroup.business_and_mgmt.value,
+                NSFBroadField.non_stem.value,
+            ]
+            ],
+            columns=[
+                "cip_title",
+                FieldTaxonomy.ncses_sci_group.value,
+                FieldTaxonomy.ncses_field_group.value,
+                FieldTaxonomy.ncses_detailed_field_group.value,
+                FieldTaxonomy.nsf_broad_field.value,
+            ],
+        )
+        expected.index.name="cipcode"
+        assert_frame_equal(classification, expected)
 
     def test_1991_exception(self):
         # Some CIP codes are present in 1991 data, but not present in the
@@ -82,6 +171,28 @@ class CrosswalkTests(unittest.TestCase):
         new_codes = self.cw.convert_to_cip2020(1991, codes=old_code, titles=old_title)
         assert new_code == new_codes.cip2020.iloc[0]
         assert new_title == new_codes.cip2020_title.iloc[0]
+        
+        classification = self.nc.classify([old_code], codes_2020=[new_code])
+        expected = pd.DataFrame(
+            index=[old_code],
+            data=[[
+                new_title,
+                NCSESSciGroup.non_sci.value,
+                NCSESFieldGroup.business_and_mgmt.value,
+                NCSESDetailedFieldGroup.business_and_mgmt.value,
+                NSFBroadField.non_stem.value,
+            ]
+            ],
+            columns=[
+                "cip_title",
+                FieldTaxonomy.ncses_sci_group.value,
+                FieldTaxonomy.ncses_field_group.value,
+                FieldTaxonomy.ncses_detailed_field_group.value,
+                FieldTaxonomy.nsf_broad_field.value,
+            ],
+        )
+        expected.index.name="cipcode"
+        assert_frame_equal(classification, expected)
 
     def test_1990_pdf_mapping(self):
         # Some CIP codes are only in the pdf, make sure those are mapped correctly
@@ -92,6 +203,28 @@ class CrosswalkTests(unittest.TestCase):
         new_codes = self.cw.convert_to_cip2020(1990, codes=old_code, titles=old_title)
         assert new_code == new_codes.cip2020.iloc[0]
         assert new_title == new_codes.cip2020_title.iloc[0]
+        
+        classification = self.nc.classify([old_code], codes_2020=[new_code])
+        expected = pd.DataFrame(
+            index=[old_code],
+            data=[[
+                new_title,
+                NCSESSciGroup.sci.value,
+                NCSESFieldGroup.math_cs.value,
+                NCSESDetailedFieldGroup.compsci.value,
+                NSFBroadField.math_cs.value,
+            ]
+            ],
+            columns=[
+                "cip_title",
+                FieldTaxonomy.ncses_sci_group.value,
+                FieldTaxonomy.ncses_field_group.value,
+                FieldTaxonomy.ncses_detailed_field_group.value,
+                FieldTaxonomy.nsf_broad_field.value,
+            ],
+        )
+        expected.index.name="cipcode"
+        assert_frame_equal(classification, expected)
 
         # Some codes are in the PDF twice; we want to take the first instance
         old_code = "17.0499"
@@ -101,6 +234,28 @@ class CrosswalkTests(unittest.TestCase):
         new_codes = self.cw.convert_to_cip2020(1990, codes=old_code, titles=old_title)
         assert new_code == new_codes.cip2020.iloc[0]
         assert new_title == new_codes.cip2020_title.iloc[0]
+
+        classification = self.nc.classify([old_code], codes_2020=[new_code])
+        expected = pd.DataFrame(
+            index=[old_code],
+            data=[[
+                new_title,
+                NCSESSciGroup.non_sci.value,
+                NCSESFieldGroup.sci_eng_technologies.value,
+                NCSESDetailedFieldGroup.health_technologies.value,
+                NSFBroadField.non_stem.value,
+            ]
+            ],
+            columns=[
+                "cip_title",
+                FieldTaxonomy.ncses_sci_group.value,
+                FieldTaxonomy.ncses_field_group.value,
+                FieldTaxonomy.ncses_detailed_field_group.value,
+                FieldTaxonomy.nsf_broad_field.value,
+            ],
+        )
+        expected.index.name="cipcode"
+        assert_frame_equal(classification, expected)
 
     def test_1990_pdf_parsing(self):
         cw = self.cw.crosswalk[(1984, 1991)]["cip_map"]
@@ -114,6 +269,28 @@ class CrosswalkTests(unittest.TestCase):
         new_codes = self.cw.convert_to_cip2020(1990, codes=old_code, titles=old_title)
         assert new_codes.cip2020.iloc[0] == old_code
         assert new_codes.cip2020_title.iloc[0] == old_title
+        
+        classification = self.nc.classify([old_code], codes_2020=new_codes.cip2020)
+        expected = pd.DataFrame(
+            index=[old_code],
+            data=[[
+                "Unknown",
+                NCSESSciGroup.unknown.value,
+                NCSESFieldGroup.unknown.value,
+                NCSESDetailedFieldGroup.unknown.value,
+                NSFBroadField.unknown.value,
+            ]
+            ],
+            columns=[
+                "cip_title",
+                FieldTaxonomy.ncses_sci_group.value,
+                FieldTaxonomy.ncses_field_group.value,
+                FieldTaxonomy.ncses_detailed_field_group.value,
+                FieldTaxonomy.nsf_broad_field.value,
+            ],
+        )
+        expected.index.name="cipcode"
+        assert_frame_equal(classification, expected)
 
 
 class NCSESTests(unittest.TestCase):

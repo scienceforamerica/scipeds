@@ -1,6 +1,5 @@
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 import typer
 from tqdm import tqdm
@@ -175,8 +174,6 @@ class IPEDSCompletionsReader:
             df["cipcode"] = df["cipcode"].apply(lambda c: c[:2] + "." + c[2:])
 
         # Translate CIP codes (and drop generic / total codes)
-        if year <= 1986:
-            print("breakpoint")
         totals_mask = (df["cipcode"] == "99.0000") | (df["cipcode"] == "99")
         if verbose:
             logger.info(
@@ -240,25 +237,13 @@ class IPEDSCompletionsReader:
         df = self._translate_transform(df, year=year, verbose=verbose)
 
         if add_ncses:
-            # Classifying the "original" codes works best for most years,
-            # a few crosswalked codes are missing
-            nc = self.ncses_classifier.classify(df.index.get_level_values("cipcode"))
-            # Except for pre-1995 data, in which case we need to classify the 2020 cip codes
-            nc2020 = self.ncses_classifier.classify(df.index.get_level_values("cip2020"))
-            for col in nc.columns:
-                nc[col] = np.where(
-                    (nc[col].values == NCSESSciGroup.unknown.value)
-                    | (nc[col].values == "Unknown"),
-                    nc2020[col].values,
-                    nc[col].values,
-                )
+            original_codes = df.index.get_level_values("cipcode")
+            codes_2020 = df.index.get_level_values("cip2020")
+            nc = self.ncses_classifier.classify(original_codes, codes_2020=codes_2020)
             df[nc.columns] = nc.values
 
         if add_dhs:
-            # Run DHS classification on old + new CIP codes to backstop against crosswalk issues
-            dc = self.dhs_classifier.classify(df.index.get_level_values("cipcode"))
-            dc2020 = self.dhs_classifier.classify(df.index.get_level_values("cip2020"))
-            dc.dhs_stem = dc.values | dc2020.values
+            dc = self.dhs_classifier.classify(df.index.get_level_values("cip2020"))
             df[dc.columns] = dc.values
 
         if verbose:
@@ -313,8 +298,7 @@ def completions(
                 .sort_values(ascending=False)
             )
             logger.info(
-                f"There were {unclassified_cips.shape[0]:d} CIP Codes "
-                "not classified in NCSES (showing top 10):"
+                f"There were {unclassified_cips.shape[0]:d} CIP Codes not classified in NCSES."
             )
 
 
