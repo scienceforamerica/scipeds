@@ -314,6 +314,20 @@ class NCSESClassifier:
                 NCSESDetailedFieldGroup.social_sci_other.value
             ),
         },
+        "20.0102": {
+            "ncses_cip_string": "Child Development, Care & Guidance",
+            FieldTaxonomy.ncses_sci_group: NCSESSciGroup.non_sci.value,
+            FieldTaxonomy.ncses_field_group: NCSESFieldGroup.home_ec.value,
+            FieldTaxonomy.ncses_detailed_field_group: (NCSESDetailedFieldGroup.home_ec.value),
+        },
+        "07.0608": {
+            "ncses_cip_string": "Word Processing",
+            FieldTaxonomy.ncses_sci_group: NCSESSciGroup.non_sci.value,
+            FieldTaxonomy.ncses_field_group: NCSESFieldGroup.business_and_mgmt.value,
+            FieldTaxonomy.ncses_detailed_field_group: (
+                NCSESDetailedFieldGroup.business_and_mgmt.value
+            ),
+        },
     }
 
     def __init__(self, filepath: Path = PIPELINE_ASSETS / "ncses_stem_classification_table.csv"):
@@ -383,27 +397,63 @@ class NCSESClassifier:
         codes = convert_to_series(codes).rename("cip_title").astype(str)
         return codes.map(self.title_map).fillna("Unknown")
 
-    def classify(self, codes: Union[str, List[str], pd.Series]) -> pd.DataFrame:
-        """Classify CIP code(s) in the NCSES classification
+    def classify(
+        self,
+        original_codes: Union[str, List[str], pd.Series],
+        codes_2020: str | List[str] | pd.Series | None = None,
+    ) -> pd.DataFrame:
+        """Classify CIP code(s) in the NCSES classification.
+
+        In all cases, prefer the classification of the original CIP code, but use the 2020 version
+        if the original is unclassified.
 
         Args:
-            codes (Union[str, List[str], pd.Series]): CIP code(s)
+            original_codes (Union[str, List[str], pd.Series]): CIP code(s)
+            codes_2020 (Union[str, List[str], pd.Series]): CIP 2020 code(s) to classify, optional.
+                Default: None
 
         Returns:
             pd.DataFrame: Data frame indexed by CIP code with each level of NCSES
                 classifcation as columns
         """
-        codes = convert_to_series(codes)
-        titles = self.get_titles(codes)
-        sgs = codes.map(self.sg_map).fillna(NCSESSciGroup.unknown.value)
-        fgs = codes.map(self.fg_map).fillna(NCSESFieldGroup.unknown.value)
-        dfgs = codes.map(self.dfg_map).fillna(NCSESDetailedFieldGroup.unknown.value)
+        # Classify the original cip codes
+        original_codes = convert_to_series(original_codes)
+        titles = self.get_titles(original_codes)
+        sgs = original_codes.map(self.sg_map)
+        fgs = original_codes.map(self.fg_map)
+        dfgs = original_codes.map(self.dfg_map)
         # map nsf broad fields at ncses field group level and sci group level
-        # to accurately capture "unknown" / unclassified cip codes
         nsf_fgs = fgs.map(NSF_REPORT_BROAD_FIELD_MAP)
-        nsf_sgs = sgs.map(NSF_REPORT_BROAD_FIELD_MAP).fillna(NSFBroadField.unknown.value)
+        nsf_sgs = sgs.map(NSF_REPORT_BROAD_FIELD_MAP)
         nsfs = nsf_fgs.combine_first(nsf_sgs)
-        df = pd.concat([codes, titles, sgs, fgs, dfgs, nsfs], axis=1)
+
+        # Fill any null values with the 2020 definitions or "unknown"
+        if codes_2020 is not None:
+            codes_2020 = convert_to_series(codes_2020)
+            sgs_2020 = codes_2020.map(self.sg_map)
+            fgs_2020 = codes_2020.map(self.fg_map)
+            dfgs_2020 = codes_2020.map(self.dfg_map)
+            nsf_fgs_2020 = fgs_2020.map(NSF_REPORT_BROAD_FIELD_MAP)
+            nsf_sgs_2020 = sgs_2020.map(NSF_REPORT_BROAD_FIELD_MAP)
+            nsfs_2020 = nsf_fgs_2020.combine_first(nsf_sgs_2020)
+
+            # Combine the two classifications
+            sgs_2020.index = sgs.index
+            fgs_2020.index = fgs.index
+            dfgs_2020.index = dfgs.index
+            nsfs_2020.index = nsfs.index
+            sgs = sgs.combine_first(sgs_2020)
+            fgs = fgs.combine_first(fgs_2020)
+            dfgs = dfgs.combine_first(dfgs_2020)
+            nsfs = nsfs.combine_first(nsfs_2020)
+
+        # Fill any remaining null values with "unknown"
+        sgs = sgs.fillna(NCSESSciGroup.unknown.value)
+        fgs = fgs.fillna(NCSESFieldGroup.unknown.value)
+        dfgs = dfgs.fillna(NCSESDetailedFieldGroup.unknown.value)
+        nsfs = nsfs.fillna(NSFBroadField.unknown.value)
+
+        df = pd.concat([original_codes, titles, sgs, fgs, dfgs, nsfs], axis=1)
         df.columns = pd.Index(
             [
                 "cipcode",

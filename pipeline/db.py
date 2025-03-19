@@ -132,7 +132,7 @@ def write_completions_to_db(
     # Create CIP table
     con.sql(f"""CREATE TABLE {CIP_TABLE} AS 
     (
-        SELECT DISTINCT ON (cip2020)
+        SELECT DISTINCT 
             cip2020,
             cip_title,
             ncses_sci_group,
