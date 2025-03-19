@@ -385,17 +385,20 @@ class NCSESClassifier:
             self.fg_map.update({code: values[FieldTaxonomy.ncses_field_group]})
             self.dfg_map.update({code: values[FieldTaxonomy.ncses_detailed_field_group]})
 
-    def get_titles(self, codes: Union[str, Iterable[str]]) -> pd.Series:
+    def get_titles(self, codes: Union[str, Iterable[str]], fill_na: bool = True) -> pd.Series:
         """Return NCSES title strings corresponding to 2020 CIP Codes
 
         Args:
             codes (Union[str, List[str], pd.Series]): CIP 2020 codes
+            fill_na (bool): Whether to fill NA values with "Unknown". Default: True
 
         Returns:
             pd.Series: NCSES title strings
         """
         codes = convert_to_series(codes).rename("cip_title").astype(str)
-        return codes.map(self.title_map).fillna("Unknown")
+        if fill_na:
+            return codes.map(self.title_map).fillna("Unknown")
+        return codes.map(self.title_map)
 
     def classify(
         self,
@@ -404,8 +407,8 @@ class NCSESClassifier:
     ) -> pd.DataFrame:
         """Classify CIP code(s) in the NCSES classification.
 
-        In all cases, prefer the classification of the original CIP code, but use the 2020 version
-        if the original is unclassified.
+        In all cases, prefer the classification of the CIP2020, but use the original version
+        if the 2020 version is unclassified.
 
         Args:
             original_codes (Union[str, List[str], pd.Series]): CIP code(s)
@@ -418,7 +421,7 @@ class NCSESClassifier:
         """
         # Classify the original cip codes
         original_codes = convert_to_series(original_codes)
-        titles = self.get_titles(original_codes)
+        titles = self.get_titles(original_codes, fill_na=False)
         sgs = original_codes.map(self.sg_map)
         fgs = original_codes.map(self.fg_map)
         dfgs = original_codes.map(self.dfg_map)
@@ -430,6 +433,7 @@ class NCSESClassifier:
         # Fill any null values with the 2020 definitions or "unknown"
         if codes_2020 is not None:
             codes_2020 = convert_to_series(codes_2020)
+            titles_2020 = self.get_titles(codes_2020, fill_na=False)
             sgs_2020 = codes_2020.map(self.sg_map)
             fgs_2020 = codes_2020.map(self.fg_map)
             dfgs_2020 = codes_2020.map(self.dfg_map)
@@ -438,16 +442,19 @@ class NCSESClassifier:
             nsfs_2020 = nsf_fgs_2020.combine_first(nsf_sgs_2020)
 
             # Combine the two classifications
+            titles_2020.index = titles.index
             sgs_2020.index = sgs.index
             fgs_2020.index = fgs.index
             dfgs_2020.index = dfgs.index
             nsfs_2020.index = nsfs.index
-            sgs = sgs.combine_first(sgs_2020)
-            fgs = fgs.combine_first(fgs_2020)
-            dfgs = dfgs.combine_first(dfgs_2020)
-            nsfs = nsfs.combine_first(nsfs_2020)
+            titles = titles_2020.combine_first(titles)
+            sgs = sgs_2020.combine_first(sgs)
+            fgs = fgs_2020.combine_first(fgs)
+            dfgs = dfgs_2020.combine_first(dfgs)
+            nsfs = nsfs_2020.combine_first(nsfs)
 
         # Fill any remaining null values with "unknown"
+        titles = titles.fillna("Unknown")
         sgs = sgs.fillna(NCSESSciGroup.unknown.value)
         fgs = fgs.fillna(NCSESFieldGroup.unknown.value)
         dfgs = dfgs.fillna(NCSESDetailedFieldGroup.unknown.value)

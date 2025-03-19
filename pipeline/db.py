@@ -141,6 +141,7 @@ def write_completions_to_db(
             nsf_broad_field,
             dhs_stem
         FROM {COMPLETIONS_TABLE}
+        ORDER BY cip2020
     );
     """)
 
