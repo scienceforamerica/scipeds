@@ -1,5 +1,7 @@
 import unittest
 
+import numpy as np
+import pandas as pd
 from pydantic import ValidationError
 
 from scipeds import constants
@@ -91,3 +93,30 @@ class GroupingTests(unittest.TestCase):
         assert Grouping.intersectional.grouping_columns == ["race_ethnicity", "gender"]
         assert Grouping.gender.grouping_columns == ["gender"]
         assert Grouping.race_ethnicity.grouping_columns == ["race_ethnicity"]
+
+
+class TaxonomyRollupTests(unittest.TestCase):
+    def test_list_inputs(self):
+        # Test that a single value is converted to a list
+        tr = TaxonomyRollup(taxonomy_name=FieldTaxonomy.original_cip, taxonomy_values="12.3456")
+        assert tr.taxonomy_values == ["12.3456"]
+
+        # Test that a list of values is preserved
+        tr = TaxonomyRollup(
+            taxonomy_name=FieldTaxonomy.original_cip, taxonomy_values=["12.3456", "12.3457"]
+        )
+        assert tr.taxonomy_values == ["12.3456", "12.3457"]
+
+        # Test that a numpy array is converted to a list
+        tr = TaxonomyRollup(
+            taxonomy_name=FieldTaxonomy.original_cip,
+            taxonomy_values=np.array(["12.3456", "12.3457"]),
+        )
+        assert tr.taxonomy_values == ["12.3456", "12.3457"]
+
+        # Test that a pandas series is converted to a list
+        tr = TaxonomyRollup(
+            taxonomy_name=FieldTaxonomy.original_cip,
+            taxonomy_values=pd.Series(["12.3456", "12.3457"]),
+        )
+        assert tr.taxonomy_values == ["12.3456", "12.3457"]
