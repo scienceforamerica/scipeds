@@ -23,7 +23,13 @@ class TaxonomyRollup(BaseModel):
     @field_validator("taxonomy_values", mode="before")
     @classmethod
     def values_valid_list(cls, v: Any):
-        if not isinstance(v, list):
+        # check if the inputted value has a "tolist" or "to_list" method
+        # and call the appropriate method if so
+        if hasattr(v, "tolist"):
+            v = v.tolist()
+        elif hasattr(v, "to_list"):
+            v = v.to_list()
+        elif not isinstance(v, list):
             v = [v]
         return v
 
