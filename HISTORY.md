@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+## [v0.0.6] (2025-03-20)
+
+### Added
+
+- Added logo, designed by Adrianna Mena (Issue [#51](https://github.com/scienceforamerica/scipeds/issues/51))
+
+### Changed
+
+- Fixed issue with incorrect CIP code classification (Issue [#42](https://github.com/scienceforamerica/scipeds/issues/42))
+- Completions queries now return some zero-value aggregates (PR [#49](https://github.com/scienceforamerica/scipeds/pulls/49))
+- Taxonomy values parameter for field totals aggregation fixed (Issue [#47](https://github.com/scienceforamerica/scipeds/issues/47))
+- Taxonomy rollup handles list-like objects that have `tolist` methods (Issue [#52](https://github.com/scienceforamerica/scipeds/issues/52))
+
 ## [v0.0.5] (2025-03-12)
 
 ### Added
@@ -47,7 +60,8 @@
 
 Initial release! 🎉
 
-[Unreleased]: https://github.com/scienceforamerica/scipeds/compare/v0.0.5...HEAD
+[Unreleased]: https://github.com/scienceforamerica/scipeds/compare/v0.0.6...HEAD
+[v0.0.6]: https://github.com/scienceforamerica/scipeds/compare/v0.0.5...v0.0.6
 [v0.0.5]: https://github.com/scienceforamerica/scipeds/compare/v0.0.4...v0.0.5
 [v0.0.4]: https://github.com/scienceforamerica/scipeds/compare/v0.0.3...v0.0.4
 [v0.0.3]: https://github.com/scienceforamerica/scipeds/compare/v0.0.2...v0.0.3
