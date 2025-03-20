@@ -8,6 +8,8 @@ theme:
     - content.code.copy
   palette:
     scheme: sfa
+  logo: logo.svg
+  favicon: logo.svg
 
 extra_css:
   - stylesheets/extra.css

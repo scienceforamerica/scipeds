@@ -1,9 +1,8 @@
-# `scipeds`
+# ![](https://raw.githubusercontent.com/scienceforamerica/scipeds/main/docs/docs/scipeds.png)
 
 A Python package for working with [IPEDS](https://nces.ed.gov/ipeds/) [data](https://nces.ed.gov/ipeds/datacenter/DataFiles.aspx).
 
 Read the full documentation [here](https://scipeds.onrender.com/).
-
 
 ![PyPI - Version](https://img.shields.io/pypi/v/scipeds)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/scipeds)
@@ -125,3 +124,5 @@ In the process of their own work, the authors found it useful to create tools to
 ### Who created `scipeds`?
 
 `scipeds` was created by [Science for America](https://www.scienceforamerica.org/) (in collaboration with [DrivenData](https://www.drivendata.org/)) as part of its mission to address urgent challenges in STEM education.
+
+The `scipeds` logo was designed by [Adrianna Mena](https://www.linkedin.com/in/adriannamena/).
