@@ -1,5 +1,5 @@
 site_name: scipeds
-site_url: https://scipeds.onrender.com/
+site_url: https://docs.scipeds.org/
 site_description: A Python package for working with IPEDS data
 repo_url: https://github.com/scienceforamerica/scipeds
 theme:
