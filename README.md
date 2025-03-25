@@ -2,7 +2,7 @@
 
 A Python package for working with [IPEDS](https://nces.ed.gov/ipeds/) [data](https://nces.ed.gov/ipeds/datacenter/DataFiles.aspx).
 
-Read the full documentation [here](https://scipeds.onrender.com/).
+Read the full documentation [here](https://docs.scipeds.org).
 
 ![PyPI - Version](https://img.shields.io/pypi/v/scipeds)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/scipeds)
@@ -92,7 +92,7 @@ df = engine.get_df_from_query(f"""
 df.head()
 ```
 
-For more detailed usage, see the [Usage page](https://scipeds.onrender.com/usage) or the [engine API Reference](https://scipeds.onrender.com/data).
+For more detailed usage, see the [Usage page](https://docs.scipeds.org/usage) or the [engine API Reference](https://docs.scipeds.org/data).
 
 ## About `scipeds`
 
@@ -102,7 +102,7 @@ For more detailed usage, see the [Usage page](https://scipeds.onrender.com/usage
 
 `scipeds` is _not_ a tool for working with raw IPEDS data. For that, you should download data directly from [IPEDS](https://nces.ed.gov/ipeds/). 
 
-Full `scipeds` documentation can be found at [this link](https://scipeds.onrender.com/), and the source code is available on [GitHub](https://github.com/scienceforamerica/scipeds).
+Full `scipeds` documentation can be found at [this link](https://docs.scipeds.org), and the source code is available on [GitHub](https://github.com/scienceforamerica/scipeds).
 
 #### Currently supported IPEDS surveys
 

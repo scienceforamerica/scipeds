@@ -37,7 +37,7 @@ classifiers = [
 requires-python = ">=3.10"
 
 [project.urls]
-Documentation = "https://scipeds.onrender.com/"
+Documentation = "https://docs.scipeds.org"
 Repository = "https://github.com/scienceforamerica/scipeds.git"
 Issues = "https://github.com/scienceforamerica/scipeds/issues"
 Changelog = "https://github.com/scienceforamerica/scipeds/blob/main/HISTORY.md"
