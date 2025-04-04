@@ -96,7 +96,10 @@ class QueryFilters(BaseModel):
             warnings.warn(
                 "IPEDS award level coding and race and ethnicity coding changed "
                 "between 2010 and 2011 datasets. For more details, see "
-                "https://nces.ed.gov/ipeds/report-your-data/race-ethnicity-reporting-changes"
+                "https://nces.ed.gov/ipeds/report-your-data/race-ethnicity-reporting-changes. "
+                "Old categories were mapped to new categories according to "
+                "the following published guidance (pg 3): "
+                "https://nces.ed.gov/ipeds/pdf/npec/data/NPEC_Paper_IPEDS_Race_Ethnicity_Deliverable_2012.pdf."
             )
         if (self.start_year < 1995 or self.end_year < 1995) and self.race_ethns != [
             RaceEthn.unknown
