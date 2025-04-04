@@ -28,7 +28,7 @@ def forward_fold_transform(values: npt.NDArray | pd.Series) -> npt.NDArray:
     """
     values = values.copy()
     null_idx = np.flatnonzero(values <= 0)
-    values[null_idx] = np.nan
+    values.iloc[null_idx] = np.nan
     transformed = np.array(list(map(lambda x: 1 - np.divide(1, x) if x <= 1 else x - 1, values)))
     transformed[null_idx] = -np.inf
     return transformed
