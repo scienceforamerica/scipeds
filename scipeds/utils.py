@@ -26,7 +26,7 @@ def forward_fold_transform(values: npt.NDArray | pd.Series) -> npt.NDArray:
 
     Note that the numeric values on a linear fold scale differ from the labeled values by 1.
     """
-    values = values.copy()
+    values = np.asarray(values).copy()
     null_idx = np.flatnonzero(values <= 0)
     values[null_idx] = np.nan
     transformed = np.array(list(map(lambda x: 1 - np.divide(1, x) if x <= 1 else x - 1, values)))
