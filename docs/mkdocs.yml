@@ -34,6 +34,8 @@ markdown_extensions:
       base_path: ../
   - pymdownx.superfences
   - tables
+  - toc:
+      permalink: true
 
 plugins:
   - gen-files:
