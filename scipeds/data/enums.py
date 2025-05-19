@@ -20,7 +20,7 @@ class RaceEthn(str, Enum):
     """Enumeration for race/ethnicity
 
     Note that the categories "Two or more races" and "Native Hawaiian or Other Pacific Islander"
-    were added for enrolllment data beginning in 2010-2011 and in completions data beginning in
+    were added for enrollment data beginning in 2010-2011 and in completions data beginning in
     2011-2012. `scipeds` will warn users if their selected `QueryFilters` include years
     with mixed categories.
 
@@ -88,7 +88,7 @@ class AwardLevel(str, Enum):
         associates (str): Associate's degree
         gt2_lt4 (str): Award of at least 2 but less than 4 academic years
         bachelors (str): Bachelor's degree
-        postbac (str): Postbaccalaureate certificate
+        postbac (str): Post-baccalaureate certificate
         masters (str): Master's degree
         postmas (str): Post-master's certificates
         doctor_research (str): Doctor's degree - research/scholarship
@@ -104,7 +104,7 @@ class AwardLevel(str, Enum):
     associates = "Associate's degree"
     gt2_lt4 = "Award of at least 2 but less than 4 academic years"
     bachelors = "Bachelor's degree"
-    postbac = "Postbaccalaureate certificate"
+    postbac = "Post-baccalaureate certificate"
     masters = "Master's degree"
     postmas = "Post-master's certificates"
     doctor_research = "Doctor's degree - research/scholarship"
