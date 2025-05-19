@@ -91,7 +91,7 @@ def download_and_extract(url: str, output_dir: Path, verbose: bool = True):
 @app.command()
 def download_from_ipeds(
     survey_output_dir: Annotated[
-        Path, typer.Option(help="Ouput directory for downloaded IPEDS-C surveys")
+        Path, typer.Option(help="Output directory for downloaded IPEDS-C surveys")
     ] = COMPLETIONS_DIR,
     crosswalk_output_dir: Annotated[
         Path, typer.Option(help="Output directory for CIP crosswalks")

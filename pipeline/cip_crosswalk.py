@@ -417,7 +417,7 @@ class NCSESClassifier:
 
         Returns:
             pd.DataFrame: Data frame indexed by CIP code with each level of NCSES
-                classifcation as columns
+                classification as columns
         """
         # Classify the original cip codes
         original_codes = convert_to_series(original_codes)

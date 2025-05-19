@@ -387,7 +387,7 @@ class QueryEngineTests(unittest.TestCase):
             "uni_degrees_within_race_ethnicity",
             "uni_degrees_total",
         ]
-        # 2 peple per major per race
+        # 2 people per major per race
         # 6 people per race subtotal
         # 6 people per uni per race
         # 18 people per uni total
@@ -421,7 +421,7 @@ class QueryEngineTests(unittest.TestCase):
             "uni_degrees_within_race_ethnicity",
             "uni_degrees_total",
         ]
-        # 2 peple per major per race
+        # 2 people per major per race
         # 6 people per race subtotal
         # 6 people per uni per race
         # 18 people per uni total
