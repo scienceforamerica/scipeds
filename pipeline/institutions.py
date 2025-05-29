@@ -145,13 +145,16 @@ class IPEDSInstitutionCharacteristicsReader:
 
         return df
 
-    def read_institution_characteristics(self, folder: Path, verbose: bool = True) -> pd.DataFrame:
+    def read_institution_characteristics(
+        self, folder: Path, verbose: bool = True, varname_dict: dict = None
+    ) -> pd.DataFrame:
         """Read, process, and write interim CSV for IPEDS institution characteristics"""
         df = self._read_raw_datafile(folder, verbose=verbose)
         df["metadata_vintage"] = int(folder.name)
         dd_file = self._find_datadict_file(folder)
         code_dict = self._get_code_dict(dd_file, verbose=verbose)
-        varname_dict = self._get_varname_dict(dd_file, verbose=verbose)
+        if varname_dict is None:
+            varname_dict = self._get_varname_dict(dd_file, verbose=verbose)
         df = self._translate(df, code_dict, varname_dict)
         df = self._add_custom_vars(df)
         return df
@@ -167,10 +170,29 @@ def institution_characteristics(
     year_dirs = sorted([d for d in metadata_dir.iterdir() if d.is_dir()])
     dfs = []
 
+    varname_dict_dfs = []
+    for year_dir in tqdm(year_dirs):
+        dd_file = reader._find_datadict_file(year_dir)
+        varname_dict_df = pd.DataFrame(
+            reader._get_varname_dict(dd_file, verbose=verbose).items(),
+            columns=["original_colname", "mapped_colname"],
+        )
+        varname_dict_df["metadata_vintage"] = int(year_dir.name)
+        varname_dict_dfs.append(varname_dict_df)
+    varname_dict_combined = pd.concat(varname_dict_dfs, ignore_index=True)
+    varname_dict_latest = (
+        varname_dict_combined.sort_values(by="metadata_vintage", ascending=False)
+        .groupby("original_colname")["mapped_colname"]
+        .first()
+        .to_dict()
+    )
+
     for year_dir in tqdm(year_dirs):
         if verbose:
             logger.info(f"Reading institutions characteristics data from {year_dir}")
-        df = reader.read_institution_characteristics(year_dir, verbose=verbose)
+        df = reader.read_institution_characteristics(
+            year_dir, verbose=verbose, varname_dict=varname_dict_latest
+        )
         dfs.append(df)
 
     if verbose:
