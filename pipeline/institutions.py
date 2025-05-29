@@ -118,7 +118,9 @@ class IPEDSInstitutionCharacteristicsReader:
         for col, mapping in code_dict.items():
             unmappable_values = [v for v in raw_df[col].unique() if v not in mapping]
             if unmappable_values:
-                logger.warning(f"Column {col} has values that will not be mapped: {unmappable_values}")
+                logger.warning(
+                    f"Column {col} has values that will not be mapped: {unmappable_values}"
+                )
             raw_df[col] = raw_df[col].map(mapping)
             if raw_df[col].isnull().all():
                 logger.warning(f"Column {col} was all null after mapping.")
