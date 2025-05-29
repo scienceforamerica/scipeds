@@ -63,6 +63,7 @@ class IPEDSInstitutionCharacteristicsReader:
         xls_files = list(folder.glob("*.xls"))
         xlsx_files = list(folder.glob("*.xlsx"))
         excel_files = xls_files + xlsx_files
+        excel_files = [f for f in excel_files if not f.name.startswith("~$")]
         if (n_files := len(excel_files)) != 1:
             raise FileNotFoundError(f"Found {n_files} Excel files in {folder}, expected 1.")
         return excel_files[0]
@@ -115,6 +116,9 @@ class IPEDSInstitutionCharacteristicsReader:
         """Translate a dataframe using a data dict"""
         # Convert codes
         for col, mapping in code_dict.items():
+            unmappable_values = [v for v in raw_df[col].unique() if v not in mapping]
+            if unmappable_values:
+                logger.warning(f"Column {col} has values that will not be mapped: {unmappable_values}")
             raw_df[col] = raw_df[col].map(mapping)
             if raw_df[col].isnull().all():
                 logger.warning(f"Column {col} was all null after mapping.")
@@ -146,7 +150,6 @@ class IPEDSInstitutionCharacteristicsReader:
         dd_file = self._find_datadict_file(folder)
         code_dict = self._get_code_dict(dd_file, verbose=verbose)
         varname_dict = self._get_varname_dict(dd_file, verbose=verbose)
-
         df = self._translate(df, code_dict, varname_dict)
         df = self._add_custom_vars(df)
         return df
@@ -173,6 +176,7 @@ def institution_characteristics(
             "Combining institutions characteristics directory info across years, "
             "using most recently available data."
         )
+
     # Combine and fill null data with most recently available data
     combined = pd.concat(dfs).sort_values("metadata_vintage")
     combined.update(combined.groupby("unitid").ffill())
