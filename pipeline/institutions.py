@@ -88,18 +88,18 @@ class IPEDSInstitutionCharacteristicsReader:
                 data_dict[var_name] = code_map
 
         # Manually update geographic region so the strings match across years
-        if 'OBEREG' in data_dict:
-            for char in [',', '(', ')', '.']:
-                data_dict['OBEREG'] = {
-                    k: v.replace(char, '') for k, v in data_dict['OBEREG'].items()
+        if "OBEREG" in data_dict:
+            for char in [",", "(", ")", "."]:
+                data_dict["OBEREG"] = {
+                    k: v.replace(char, "") for k, v in data_dict["OBEREG"].items()
                 }
             # And get rid of any extra white space
-            data_dict['OBEREG'] = {
-                k: ' '.join(v.split()) for k, v in data_dict['OBEREG'].items()
-            }
-            data_dict['OBEREG'] = {
-                k: 'Outlying areas AS FM GU MH MP PR PW VI' if v == 'Other US jurisdictions AS FM GU MH MP PR PW VI' else v
-                for k, v in data_dict['OBEREG'].items()
+            data_dict["OBEREG"] = {k: " ".join(v.split()) for k, v in data_dict["OBEREG"].items()}
+            data_dict["OBEREG"] = {
+                k: "Outlying areas AS FM GU MH MP PR PW VI"
+                if v == "Other US jurisdictions AS FM GU MH MP PR PW VI"
+                else v
+                for k, v in data_dict["OBEREG"].items()
             }
 
         return data_dict
