@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Collection, Dict
+from typing import Collection, Dict, Optional
 
 import pandas as pd
 import typer
@@ -127,7 +127,10 @@ class IPEDSInstitutionCharacteristicsReader:
         return varname_dict
 
     def _translate(
-        self, raw_df: pd.DataFrame, code_dict: Dict[str, dict], varname_dict: Dict[str, str]
+        self,
+        raw_df: pd.DataFrame,
+        code_dict: Dict[str, dict],
+        varname_dict: Optional[Dict[str, str]] = None,
     ) -> pd.DataFrame:
         """Translate a dataframe using a data dict"""
         # Convert codes
@@ -162,7 +165,10 @@ class IPEDSInstitutionCharacteristicsReader:
         return df
 
     def read_institution_characteristics(
-        self, folder: Path, verbose: bool = True, varname_dict: dict = None
+        self,
+        folder: Path,
+        verbose: bool = True,
+        varname_dict: Optional[Dict[str, str]] = None,
     ) -> pd.DataFrame:
         """Read, process, and write interim CSV for IPEDS institution characteristics"""
         df = self._read_raw_datafile(folder, verbose=verbose)
