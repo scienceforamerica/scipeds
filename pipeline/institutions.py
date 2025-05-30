@@ -193,7 +193,7 @@ def institution_characteristics(
     dfs = []
 
     varname_dict_dfs = []
-    for year_dir in tqdm(year_dirs):
+    for year_dir in year_dirs:
         dd_file = reader._find_datadict_file(year_dir)
         varname_dict_df = pd.DataFrame(
             reader._get_varname_dict(dd_file, verbose=verbose).items(),
