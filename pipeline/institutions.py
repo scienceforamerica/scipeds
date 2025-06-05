@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Collection, Dict
+from typing import Collection, Dict, Optional
 
 import pandas as pd
 import typer
@@ -63,6 +63,7 @@ class IPEDSInstitutionCharacteristicsReader:
         xls_files = list(folder.glob("*.xls"))
         xlsx_files = list(folder.glob("*.xlsx"))
         excel_files = xls_files + xlsx_files
+        excel_files = [f for f in excel_files if not f.name.startswith("~$")]
         if (n_files := len(excel_files)) != 1:
             raise FileNotFoundError(f"Found {n_files} Excel files in {folder}, expected 1.")
         return excel_files[0]
@@ -85,6 +86,22 @@ class IPEDSInstitutionCharacteristicsReader:
                     zip(var_values[self.CODE_VAL_COL], var_values[self.CODE_LABEL_COL]),
                 )
                 data_dict[var_name] = code_map
+
+        # Manually update geographic region so the strings match across years
+        if "OBEREG" in data_dict:
+            for char in [",", "(", ")", "."]:
+                data_dict["OBEREG"] = {
+                    k: v.replace(char, "") for k, v in data_dict["OBEREG"].items()
+                }
+            # And get rid of any extra white space
+            data_dict["OBEREG"] = {k: " ".join(v.split()) for k, v in data_dict["OBEREG"].items()}
+            data_dict["OBEREG"] = {
+                k: "Outlying areas AS FM GU MH MP PR PW VI"
+                if v == "Other US jurisdictions AS FM GU MH MP PR PW VI"
+                else v
+                for k, v in data_dict["OBEREG"].items()
+            }
+
         return data_dict
 
     def _get_varname_dict(self, filepath: Path, verbose: bool = True) -> dict:
@@ -110,11 +127,19 @@ class IPEDSInstitutionCharacteristicsReader:
         return varname_dict
 
     def _translate(
-        self, raw_df: pd.DataFrame, code_dict: Dict[str, dict], varname_dict: Dict[str, str]
+        self,
+        raw_df: pd.DataFrame,
+        code_dict: Dict[str, dict],
+        varname_dict: Optional[Dict[str, str]] = None,
     ) -> pd.DataFrame:
         """Translate a dataframe using a data dict"""
         # Convert codes
         for col, mapping in code_dict.items():
+            unmappable_values = [v for v in raw_df[col].unique() if v not in mapping]
+            if unmappable_values:
+                logger.warning(
+                    f"Column {col} has values that will not be mapped: {unmappable_values}"
+                )
             raw_df[col] = raw_df[col].map(mapping)
             if raw_df[col].isnull().all():
                 logger.warning(f"Column {col} was all null after mapping.")
@@ -139,14 +164,19 @@ class IPEDSInstitutionCharacteristicsReader:
 
         return df
 
-    def read_institution_characteristics(self, folder: Path, verbose: bool = True) -> pd.DataFrame:
+    def read_institution_characteristics(
+        self,
+        folder: Path,
+        verbose: bool = True,
+        varname_dict: Optional[Dict[str, str]] = None,
+    ) -> pd.DataFrame:
         """Read, process, and write interim CSV for IPEDS institution characteristics"""
         df = self._read_raw_datafile(folder, verbose=verbose)
         df["metadata_vintage"] = int(folder.name)
         dd_file = self._find_datadict_file(folder)
         code_dict = self._get_code_dict(dd_file, verbose=verbose)
-        varname_dict = self._get_varname_dict(dd_file, verbose=verbose)
-
+        if varname_dict is None:
+            varname_dict = self._get_varname_dict(dd_file, verbose=verbose)
         df = self._translate(df, code_dict, varname_dict)
         df = self._add_custom_vars(df)
         return df
@@ -162,10 +192,29 @@ def institution_characteristics(
     year_dirs = sorted([d for d in metadata_dir.iterdir() if d.is_dir()])
     dfs = []
 
+    varname_dict_dfs = []
+    for year_dir in year_dirs:
+        dd_file = reader._find_datadict_file(year_dir)
+        varname_dict_df = pd.DataFrame(
+            reader._get_varname_dict(dd_file, verbose=verbose).items(),
+            columns=["original_colname", "mapped_colname"],
+        )
+        varname_dict_df["metadata_vintage"] = int(year_dir.name)
+        varname_dict_dfs.append(varname_dict_df)
+    varname_dict_combined = pd.concat(varname_dict_dfs, ignore_index=True)
+    varname_dict_latest = (
+        varname_dict_combined.sort_values(by="metadata_vintage", ascending=False)
+        .groupby("original_colname")["mapped_colname"]
+        .first()
+        .to_dict()
+    )
+
     for year_dir in tqdm(year_dirs):
         if verbose:
             logger.info(f"Reading institutions characteristics data from {year_dir}")
-        df = reader.read_institution_characteristics(year_dir, verbose=verbose)
+        df = reader.read_institution_characteristics(
+            year_dir, verbose=verbose, varname_dict=varname_dict_latest
+        )
         dfs.append(df)
 
     if verbose:
@@ -173,6 +222,7 @@ def institution_characteristics(
             "Combining institutions characteristics directory info across years, "
             "using most recently available data."
         )
+
     # Combine and fill null data with most recently available data
     combined = pd.concat(dfs).sort_values("metadata_vintage")
     combined.update(combined.groupby("unitid").ffill())
