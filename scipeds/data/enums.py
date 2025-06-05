@@ -88,7 +88,7 @@ class AwardLevel(str, Enum):
         associates (str): Associate's degree
         gt2_lt4 (str): Award of at least 2 but less than 4 academic years
         bachelors (str): Bachelor's degree
-        postbac (str): Post-baccalaureate certificate
+        postbac (str): Postbaccalaureate certificate
         masters (str): Master's degree
         postmas (str): Post-master's certificates
         doctor_research (str): Doctor's degree - research/scholarship
@@ -104,7 +104,7 @@ class AwardLevel(str, Enum):
     associates = "Associate's degree"
     gt2_lt4 = "Award of at least 2 but less than 4 academic years"
     bachelors = "Bachelor's degree"
-    postbac = "Post-baccalaureate certificate"
+    postbac = "Postbaccalaureate certificate"
     masters = "Master's degree"
     postmas = "Post-master's certificates"
     doctor_research = "Doctor's degree - research/scholarship"
