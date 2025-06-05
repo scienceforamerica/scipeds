@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [v0.0.7] (2025-06-05)
+
+### Changed
+
+- Fixed issue with institution directory metadata processing (Issue [#59](https://github.com/scienceforamerica/scipeds/issues/59))
+- Update links to point to new scipeds.org URL (PR [#56](https://github.com/scienceforamerica/scipeds/pull/56))
+- Update race/ethnicity change warning with link to IPEDS documentation (PR [#57](https://github.com/scienceforamerica/scipeds/pull/57))
+- Fix FutureWarning (PR [#58](https://github.com/scienceforamerica/scipeds/pull/58))
+- Fixed typos in documentation and docstrings (PR [#60](https://github.com/scienceforamerica/scipeds/pull/60))
+
 ## [v0.0.6] (2025-03-20)
 
 ### Added
@@ -60,7 +70,8 @@
 
 Initial release! 🎉
 
-[Unreleased]: https://github.com/scienceforamerica/scipeds/compare/v0.0.6...HEAD
+[Unreleased]: https://github.com/scienceforamerica/scipeds/compare/v0.0.7...HEAD
+[v0.0.7]: https://github.com/scienceforamerica/scipeds/compare/v0.0.6...v0.0.7
 [v0.0.6]: https://github.com/scienceforamerica/scipeds/compare/v0.0.5...v0.0.6
 [v0.0.5]: https://github.com/scienceforamerica/scipeds/compare/v0.0.4...v0.0.5
 [v0.0.4]: https://github.com/scienceforamerica/scipeds/compare/v0.0.3...v0.0.4
