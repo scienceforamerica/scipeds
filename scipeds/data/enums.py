@@ -20,7 +20,7 @@ class RaceEthn(str, Enum):
     """Enumeration for race/ethnicity
 
     Note that the categories "Two or more races" and "Native Hawaiian or Other Pacific Islander"
-    were added for enrolllment data beginning in 2010-2011 and in completions data beginning in
+    were added for enrollment data beginning in 2010-2011 and in completions data beginning in
     2011-2012. `scipeds` will warn users if their selected `QueryFilters` include years
     with mixed categories.
 

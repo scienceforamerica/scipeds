@@ -156,7 +156,7 @@ class IPEDSInstitutionCharacteristicsReader:
             "|".join(tech_strings), case=False, regex=True
         )
 
-        # Construct a column that looks for health science shools
+        # Construct a column that looks for health science schools
         med_strings = ["Health Science", "Medical Science"]
         df["health_school"] = df["institution_name"].str.contains(
             "|".join(med_strings), case=False, regex=True

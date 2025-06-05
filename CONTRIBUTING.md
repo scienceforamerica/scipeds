@@ -40,11 +40,11 @@ To add new functionality to `scipeds`, it is useful to have the source code work
     - To download the pre-processed duckdb, run `scipeds download_db`.
     - If you want the raw data files. You can download them from Science for America's cloud storage (`make download-raw`) or directly from IPEDS (`make download-raw-from-ipeds`). You can then process the raw data files into a processed duckdb (`make process`).
 
-### Achitecture and design considerations
+### Architecture and design considerations
 
 The `scipeds` repo actually contains two different things:
 
-- an _application_ (in `pipeline/`) for downloading and processing raw data from IPEDS into a duckdb database 
+- an _application_ (in `pipeline/`) for downloading and processing raw data from IPEDS into a duckdb database
 - a _library_ (in `scipeds/`) to make it easy to query IPEDS data from Python
 
 Contributions to IPEDS will generally fall into two categories: adding new queries of existing IPEDS data (which currently contains just completions data and institutional directory information) and adding new data sources to the duckdb database.

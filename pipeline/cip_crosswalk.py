@@ -287,7 +287,7 @@ class NCSESClassifier:
             FieldTaxonomy.ncses_detailed_field_group: NCSESDetailedFieldGroup.ag_sci.value,
         },
         "15.1799": {
-            "ncses_cip_string": "Energy Systems Technologies/Technicials, Other",
+            "ncses_cip_string": "Energy Systems Technologies/Technicians, Other",
             FieldTaxonomy.ncses_sci_group: NCSESSciGroup.non_sci.value,
             FieldTaxonomy.ncses_field_group: NCSESFieldGroup.sci_eng_technologies.value,
             FieldTaxonomy.ncses_detailed_field_group: (
@@ -417,7 +417,7 @@ class NCSESClassifier:
 
         Returns:
             pd.DataFrame: Data frame indexed by CIP code with each level of NCSES
-                classifcation as columns
+                classification as columns
         """
         # Classify the original cip codes
         original_codes = convert_to_series(original_codes)

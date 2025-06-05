@@ -8,7 +8,7 @@
 
 ### Who made `scipeds` and why did they make it?
 
-`scipeds` was created by Science for America. As part of Science for America's work on STEM equity, we started working with IPEDS data and found ourselves writing code to make our work easier. We realized that most of the code we'd written wasn't specific to our own research questions, and decided to create `scipeds` to make it easier for ourselves and others to work with IPEDS data. 
+`scipeds` was created by Science for America. As part of Science for America's work on STEM equity, we started working with IPEDS data and found ourselves writing code to make our work easier. We realized that most of the code we'd written wasn't specific to our own research questions, and decided to create `scipeds` to make it easier for ourselves and others to work with IPEDS data.
 
 ## Data
 
@@ -22,7 +22,7 @@ Yes! By cloning the GitHub repository and running the data pipeline.
 
 ### What data is currently included in `scipeds`?
 
-`scipeds` currently incorporates the following IPEDS survey components: 
+`scipeds` currently incorporates the following IPEDS survey components:
 
 - IPEDS Completions Survey (1984-2023)
 - IPEDS Directory Information (2011-2023)
@@ -30,7 +30,7 @@ Yes! By cloning the GitHub repository and running the data pipeline.
 !!!warning
     Race/ethnicity is unavailable for completions data from 1984-1994. All race/ethnicity columns have been set to "unknown" during this time period.
 
-    In addition, race/ethnicity encoding changed between 2010 and 2011 data. 
+    In addition, race/ethnicity encoding changed between 2010 and 2011 data.
     Old categories were mapped to new categories according to
     [published guidance (pg 3)](https://nces.ed.gov/ipeds/pdf/npec/data/NPEC_Paper_IPEDS_Race_Ethnicity_Deliverable_2012.pdf).
 
@@ -47,7 +47,7 @@ We're always looking for contributors and would love for you to add it to the pa
 
 ### What completions data is currently available?
 
-`scipeds` uses data from the "A" series of aggregated IPEDS Completions Suvey data, which contains completers by university (6-digit UNITID), year, field of study (6-digit CIP code), award level, race/ethnicity, and gender. This data is available in the `ipeds_completions_a` table in the pre-processed duckdb.
+`scipeds` uses data from the "A" series of aggregated IPEDS Completions Survey data, which contains completers by university (6-digit UNITID), year, field of study (6-digit CIP code), award level, race/ethnicity, and gender. This data is available in the `ipeds_completions_a` table in the pre-processed duckdb.
 
 In addition to the 6-digit CIP code, higher-level field taxonomies are also provided. The following is a complete schema for the `ipeds_completions_a` table:
 
@@ -63,7 +63,7 @@ You can add a wrapper to your query in the engine definition. See the contributi
 
 ### How do query filters work?
 
-Query filters allow you to specify the data you want to include for your analysis. 
+Query filters allow you to specify the data you want to include for your analysis.
 
 For example, if you only want to look at Associate's degrees and want to exclude non-resident aliens from your analysis, you can specify the race/ethnicity groups in your `QueryFilter` as all groups except `RaceEthn.nonres` and the award levels as just `AwardLevel.associates`. By default, query filters will include all years of data, all race/ethnicity groups, both first and second majors, and all award levels.
 
@@ -75,7 +75,7 @@ For example, if you only want to look at Associate's degrees and want to exclude
 It depends a little bit on the query, but in general each value returned by a completions query counts the number of awards or degrees received by members within a particular group. The number of awards is subject to any specified `QueryFilters`:
 
 - `rollup_degrees_within_group` is the number of degrees awarded to a particular group (specified by your `grouping`) across all the fields specified in your `TaxonomyRollup`
-- `rollup_degrees_total` is the number of degrees across all groups, across all the fields specified in your `TaxonomyRollup` 
+- `rollup_degrees_total` is the number of degrees across all groups, across all the fields specified in your `TaxonomyRollup`
 - `field_degrees_within_group` is the number of degrees awarded to a particular group (specified by your `grouping`) within a field specified by a `FieldTaxonomy`
 - `field_degrees_total` is the number of degrees within a specified field across all groups within a field specified by a `FieldTaxonomy`
 - `uni_degrees_within_group` is the number of degrees awarded to a particular group, across all fields
