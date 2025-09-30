@@ -1,7 +1,7 @@
 # ![](https://raw.githubusercontent.com/scienceforamerica/scipeds/main/docs/docs/scipeds.png)
 
 > [!NOTE]
-> **2024 data**: As of `v0.0.8`, this package now includes 2024 data!
+> **2024 data**: As of `v0.0.8`, `scipeds` now includes 2024 data!
 
 A Python package for working with [IPEDS](https://nces.ed.gov/ipeds/) [data](https://nces.ed.gov/ipeds/datacenter/DataFiles.aspx).
 
