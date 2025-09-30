@@ -14,7 +14,7 @@ CIP_TABLE = "cip_info"
 
 # Start and end year for analysis
 START_YEAR = 1984
-END_YEAR = 2023
+END_YEAR = 2024
 
 # Storage bucket
 SCIPEDS_BUCKET = "scipeds-data"

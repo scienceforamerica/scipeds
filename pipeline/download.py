@@ -115,8 +115,20 @@ def download_from_ipeds(
     if survey_year is not None:
         year_dir = survey_output_dir / str(survey_year)
         year_dir.mkdir(parents=True, exist_ok=True)
+
+        # Completions data
+        # Note: this doesn't download the data dictionary, just the data
         filename = COMPLETION_ZIP_FILENAMES[survey_year]
         download_and_extract(filename, year_dir, verbose)
+
+        # Institution metadata
+        year_dir = institution_output_dir / str(survey_year)
+        year_dir.mkdir(parents=True, exist_ok=True)
+        filename = INSTITUTION_METADATA_FILENAMES[survey_year]
+        download_and_extract(filename, year_dir, verbose)
+        filename = INSTITUTION_METADATA_DATADICTS[survey_year]
+        download_and_extract(filename, year_dir, verbose)
+
         return 0
 
     # Download survey completion data

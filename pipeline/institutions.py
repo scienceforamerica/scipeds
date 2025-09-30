@@ -21,25 +21,38 @@ class IPEDSInstitutionCharacteristicsReader:
          (code_label)
     """
 
-    # Details for variables (the Excel sheet where definitions live
-    # and the columns for constructing key-value pairs)
-    VAR_SHEET = "varlist"
-    VAR_NAME_COL = "varname"
-    VAR_LABEL_COL = "varTitle"
-
-    # The name of the Excel sheet where the code name -> label dictionary
-    # lives for each variable type
-    CODE_SHEET = "Frequencies"
-    CODE_VAL_COL = "codevalue"
-    CODE_LABEL_COL = "valuelabel"
-
-    def __init__(self, keep_raw_vars: Collection = ("STABBR",)):
+    def __init__(self, vintage: Optional[str] = None, keep_raw_vars: Collection = ("STABBR",)):
         """Constructor
 
         Args:
+            vintage (string, option): The vintage/year of IPEDS data being read, which
+                defines data/column formats.
             keep_raw_vars (Collection, optional): Name of variables to keep
                 un-translated as their raw values. Defaults to None.
         """
+        if vintage == "2024":
+            # Details for variables (the Excel sheet where definitions live
+            # and the columns for constructing key-value pairs)
+            self.VAR_SHEET = "Varlist"
+            self.VAR_NAME_COL = "varName"
+            self.VAR_LABEL_COL = "varTitle"
+
+            # The name of the Excel sheet where the code name -> label dictionary
+            # lives for each variable type
+            self.CODE_SHEET = "Frequencies"
+            self.CODE_VAL_COL = "CodeValue"
+            self.CODE_LABEL_COL = "ValueLabel"
+            self.CODE_VAR_NAME_COL = "VarName"
+        else:
+            self.VAR_SHEET = "varlist"
+            self.VAR_NAME_COL = "varname"
+            self.VAR_LABEL_COL = "varTitle"
+
+            self.CODE_SHEET = "Frequencies"
+            self.CODE_VAL_COL = "codevalue"
+            self.CODE_LABEL_COL = "valuelabel"
+            self.CODE_VAR_NAME_COL = "varname"
+
         self.keep_raw_vars = keep_raw_vars
 
     def _read_raw_datafile(self, folder: Path, verbose: bool = True) -> pd.DataFrame:
@@ -53,6 +66,8 @@ class IPEDSInstitutionCharacteristicsReader:
             logger.info(
                 f"Read raw data with {raw_df.shape[0]:,} rows and {raw_df.shape[1]:,} cols"
             )
+
+        raw_df.columns = pd.Index([c.strip().replace("ï»¿", "") for c in raw_df.columns])
         # strip all whitespace
         for col in raw_df.columns:
             raw_df[col] = raw_df[col].str.strip()
@@ -75,12 +90,12 @@ class IPEDSInstitutionCharacteristicsReader:
             logger.info(
                 f"Read data dictionary with {raw_dd.shape[0]:,} rows and {raw_dd.shape[1]:,} cols"
             )
-        if self.VAR_NAME_COL not in raw_dd.columns:
+        if self.CODE_VAR_NAME_COL not in raw_dd.columns:
             raise KeyError("Data dictionary did not contain a column for varname.")
 
         # Create mappings
         data_dict = {}
-        for var_name, var_values in raw_dd.groupby(self.VAR_NAME_COL):
+        for var_name, var_values in raw_dd.groupby(self.CODE_VAR_NAME_COL):
             if var_name not in self.keep_raw_vars:
                 code_map = dict(
                     zip(var_values[self.CODE_VAL_COL], var_values[self.CODE_LABEL_COL]),
@@ -188,12 +203,13 @@ def institution_characteristics(
     verbose: bool = True,
 ):
     """CLI Entrypoint for processing IPEDS institution characteristics"""
-    reader = IPEDSInstitutionCharacteristicsReader()
+
     year_dirs = sorted([d for d in metadata_dir.iterdir() if d.is_dir()])
     dfs = []
 
     varname_dict_dfs = []
     for year_dir in year_dirs:
+        reader = IPEDSInstitutionCharacteristicsReader(vintage=year_dir.name)
         dd_file = reader._find_datadict_file(year_dir)
         varname_dict_df = pd.DataFrame(
             reader._get_varname_dict(dd_file, verbose=verbose).items(),
@@ -210,6 +226,7 @@ def institution_characteristics(
     )
 
     for year_dir in tqdm(year_dirs):
+        reader = IPEDSInstitutionCharacteristicsReader(vintage=year_dir.name)
         if verbose:
             logger.info(f"Reading institutions characteristics data from {year_dir}")
         df = reader.read_institution_characteristics(

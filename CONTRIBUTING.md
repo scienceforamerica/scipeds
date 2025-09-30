@@ -80,6 +80,23 @@ To add a new data source, please follow these instructions so the maintainers ca
 
     By default, `scipeds` will use the database in the `SCIPEDS_CACHE_DIR` for query engines. As you are developing a new pipeline, `make process` outputs data to the interim and processed data directories in the `DATA_DIR`. Make sure you are querying the correct database.
 
+### Updating data
+
+IPEDS releases new data yearly. Package maintainers can follow these steps to update the data:
+
+1. Download the data from IPEDS and upload it to SfA's Google Cloud `scipeds-data` bucket in the respective folder. Make sure to grab both the new year of data as well as the previous year's revised data.
+1. Update the pipeline code that downloads the data. Make sure it uses the new year, and that both downloading directly from IPEDS (`make download-raw-from-ipeds`) and from Science for America's cloud storage (`make download-raw`) work.
+1. Process the data into a the duckdb file (`make process`).
+1. Do a bit of sanity-checking on the new duckdb file to make sure you don't have unexpected new or missing columns in the metadata, and that the total number of students seems okay.
+
+!!! note
+
+    If you manually upload the data into the storage bucket by first creating a folder called {year}, you might need to then delete that folder for the download code to work. (For some reason, Google Cloud creates a zero-byte object placeholder, which the download code sees as a file rather than a directory.)
+
+    gsutil rm gs://scipeds-data/raw/ipeds_completions_a/{year}/
+    gsutil rm gs://scipeds-data/raw/ipeds_directory_info/{year}/
+
+To push these updates to production, simply release a new version of `scipeds`. The release actions automatically download all the data from cloud storage, process it, and upload the updated duckdb file to a public google cloud bucket.
 
 ## Submitting a pull request
 
