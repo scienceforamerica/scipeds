@@ -69,6 +69,7 @@ INSTITUTION_CHARACTERISTICS_DIR = pipeline.settings.RAW_DATA_DIR / constants.INS
 COMPLETIONS_DIR = pipeline.settings.RAW_DATA_DIR / constants.COMPLETIONS_TABLE
 ENROLLMENT_RESIDENCE_DIR = pipeline.settings.RAW_DATA_DIR / constants.ENROLLMENT_RESIDENCE_TABLE
 
+
 def fetch_file(url: str, output_path: Path, verbose: bool = True):
     """Download file from url to output_path"""
     if verbose:

@@ -10,11 +10,10 @@ from scipeds import constants
 from scipeds.utils import clean_name
 
 ENROLLMENT_RESIDENCE_CODES = {
-    'line': 'state_of_residence',
-    'efcstate': 'state_of_residence',
-    'efres01': 'all_first_time_students',
-    'efres02': 'first_time_students_recently_graduated_high_school',
-    
+    "line": "state_of_residence",
+    "efcstate": "state_of_residence",
+    "efres01": "all_first_time_students",
+    "efres02": "first_time_students_recently_graduated_high_school",
     ## These columns are not in recent data, so drop them
     # 'efres03': 'transfers',
     # 'efres04': 'first_professionals',
@@ -82,36 +81,34 @@ FIPS_STATE_MAP = {
     "54": "WV",  # West Virginia
     "55": "WI",  # Wisconsin
     "56": "WY",  # Wyoming
-    
     # Territories
-    "60": "AS",   # American Samoa
-    "64": "FM",   # Federated States of Micronesia
-    "66": "GU",   # Guam
-    "59": "GU",   # Guam (in older data)
-    "68": "MH",   # Marshall Islands
-    "69": "MP",   # Northern Marianas
-    "70": "PW",   # Palau
-    "72": "PR",   # Puerto Rico
-    "61": "PR",   # Puerto Rico (in older data)
-    "78": "VI",   # Virgin Islands
-    "63": "VI",   # Virgin Islands (in older data)
-    "62": "TTPI", # Trust Territory of the Pacific Islands
-    
-    # Others    
-    "90": "foreign_countries",   # Foreign Countries
-    "58": "us_total", # US total
-    "89": "outlying_areas_total", 
+    "60": "AS",  # American Samoa
+    "64": "FM",  # Federated States of Micronesia
+    "66": "GU",  # Guam
+    "59": "GU",  # Guam (in older data)
+    "68": "MH",  # Marshall Islands
+    "69": "MP",  # Northern Marianas
+    "70": "PW",  # Palau
+    "72": "PR",  # Puerto Rico
+    "61": "PR",  # Puerto Rico (in older data)
+    "78": "VI",  # Virgin Islands
+    "63": "VI",  # Virgin Islands (in older data)
+    "62": "TTPI",  # Trust Territory of the Pacific Islands
+    # Others
+    "90": "foreign_countries",  # Foreign Countries
+    "58": "us_total",  # US total
+    "89": "outlying_areas_total",
     "57": "unknown",  # Unknown
     "98": "balance_line",  # Balance line
     "99": "grand_total",  # Grand Total
     "65": "grand_total",  # Grand total, older data
-
 }
 
 assert len(FIPS_STATE_MAP.keys()) == len(set(FIPS_STATE_MAP.keys()))
 
+
 class IPEDSFallEnrollmentReader:
-    """Class for reading, cleaning, tidying, and transforming historical IPEDS 
+    """Class for reading, cleaning, tidying, and transforming historical IPEDS
     Fall Enrollment data.
     """
 
@@ -144,13 +141,15 @@ class IPEDSFallEnrollmentReader:
         df.rename(columns={col: clean_name(col) for col in df.columns}, inplace=True)
 
         # If both 'line' and 'efcstate' columns exists, drop 'line'
-        if 'line' in df.columns and 'efcstate' in df.columns:
+        if "line" in df.columns and "efcstate" in df.columns:
             if verbose:
                 logger.warning("'line' and 'efcstate' columns both found, using 'efcstate'")
-            df = df.drop('line', axis=1)
-            
+            df = df.drop("line", axis=1)
+
         # Only keep columns of interest
-        keep_columns = ['unitid'] + [col for col in df.columns if col in ENROLLMENT_RESIDENCE_CODES]
+        keep_columns = ["unitid"] + [
+            col for col in df.columns if col in ENROLLMENT_RESIDENCE_CODES
+        ]
 
         return df[keep_columns]
 
@@ -158,7 +157,7 @@ class IPEDSFallEnrollmentReader:
         self, df: pd.DataFrame, year: int, verbose: bool = True
     ) -> pd.DataFrame:
         """Translate columns using data dictionaries and transform into a tidy dataframe"""
-        
+
         # Add year column
         df["year"] = year
 
@@ -166,14 +165,14 @@ class IPEDSFallEnrollmentReader:
         df = df.rename(columns=ENROLLMENT_RESIDENCE_CODES)
 
         # Translate states to abbreviations
-        df['state_of_residence'] = df['state_of_residence'].str.strip()
-        df['state_of_residence'] = df['state_of_residence'].map(FIPS_STATE_MAP)#.fillna(df['state_of_residence'])
-    
+        df["state_of_residence"] = df["state_of_residence"].str.strip()
+        df["state_of_residence"] = df["state_of_residence"].map(
+            FIPS_STATE_MAP
+        )
+
         return df
 
-    def read_year(
-        self, folder: Path, verbose: bool = True
-    ) -> pd.DataFrame:
+    def read_year(self, folder: Path, verbose: bool = True) -> pd.DataFrame:
         try:
             year = int(folder.name)
         except Exception:
@@ -205,6 +204,7 @@ def fall_enrollment_residence(
         df.to_csv(output_file, compression="gzip")
         if verbose:
             logger.info(f"Wrote results for {year_dir.name} to {output_file}")
+
 
 if __name__ == "__main__":
     typer.run(fall_enrollment_residence)
