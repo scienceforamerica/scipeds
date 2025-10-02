@@ -114,7 +114,7 @@ class IPEDSCompletionsReader:
         self.dhs_classifier = DHSClassifier()
 
     def _read_raw_data_files(self, folder: Path, verbose: bool = True) -> pd.DataFrame:
-        """Find and read the raw data file from"""
+        """Find and read the raw data file from folder"""
         # Load raw data, using revised data if it exists
         csv_files = list(folder.glob("*rv.csv"))
         if len(csv_files) == 0:
