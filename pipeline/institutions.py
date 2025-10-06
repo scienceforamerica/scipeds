@@ -38,8 +38,6 @@ class IPEDSInstitutionCharacteristicsReader:
         """Constructor
 
         Args:
-            vintage (string, option): The vintage/year of IPEDS data being read, which
-                defines data/column formats.
             keep_raw_vars (Collection, optional): Name of variables to keep
                 un-translated as their raw values. Defaults to None.
         """
