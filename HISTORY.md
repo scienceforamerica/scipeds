@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [v0.0.8] (2025-10-06)
+
+### Changed
+
+- Updated documentation hierarchy and add institutions table to documentation (Issue [#65](https://github.com/scienceforamerica/scipeds/issues/65))
+
+### Added
+
+- New 2024 data and revised 2023 data for Completions and Institution Directory metadata (Issue [#70](https://github.com/scienceforamerica/scipeds/issues/70))
+
 ## [v0.0.7] (2025-06-05)
 
 ### Changed
@@ -70,7 +80,8 @@
 
 Initial release! 🎉
 
-[Unreleased]: https://github.com/scienceforamerica/scipeds/compare/v0.0.7...HEAD
+[Unreleased]: https://github.com/scienceforamerica/scipeds/compare/v0.0.8...HEAD
+[v0.0.8]: https://github.com/scienceforamerica/scipeds/compare/v0.0.7...v0.0.8
 [v0.0.7]: https://github.com/scienceforamerica/scipeds/compare/v0.0.6...v0.0.7
 [v0.0.6]: https://github.com/scienceforamerica/scipeds/compare/v0.0.5...v0.0.6
 [v0.0.5]: https://github.com/scienceforamerica/scipeds/compare/v0.0.4...v0.0.5
