@@ -8,7 +8,7 @@ from tqdm import tqdm
 import pipeline.settings
 from pipeline.settings import logger
 from scipeds import constants
-from scipeds.utils import clean_name
+from scipeds.utils import clean_name, read_excel_with_lowercase_sheets
 
 
 class IPEDSInstitutionCharacteristicsReader:
@@ -25,13 +25,14 @@ class IPEDSInstitutionCharacteristicsReader:
     # and the columns for constructing key-value pairs)
     VAR_SHEET = "varlist"
     VAR_NAME_COL = "varname"
-    VAR_LABEL_COL = "varTitle"
+    VAR_LABEL_COL = "vartitle"
 
     # The name of the Excel sheet where the code name -> label dictionary
     # lives for each variable type
-    CODE_SHEET = "Frequencies"
+    CODE_SHEET = "frequencies"
     CODE_VAL_COL = "codevalue"
     CODE_LABEL_COL = "valuelabel"
+    CODE_VAR_NAME_COL = "varname"
 
     def __init__(self, keep_raw_vars: Collection = ("STABBR",)):
         """Constructor
@@ -53,6 +54,8 @@ class IPEDSInstitutionCharacteristicsReader:
             logger.info(
                 f"Read raw data with {raw_df.shape[0]:,} rows and {raw_df.shape[1]:,} cols"
             )
+
+        raw_df.columns = pd.Index([c.strip().replace("ï»¿", "") for c in raw_df.columns])
         # strip all whitespace
         for col in raw_df.columns:
             raw_df[col] = raw_df[col].str.strip()
@@ -70,17 +73,18 @@ class IPEDSInstitutionCharacteristicsReader:
 
     def _get_code_dict(self, filepath: Path, verbose: bool = True) -> dict:
         """Get the dictionary mapping of code values to code labels for each variable"""
-        raw_dd = pd.read_excel(filepath, sheet_name=self.CODE_SHEET)
+        raw_dd = read_excel_with_lowercase_sheets(filepath, sheet_name=self.CODE_SHEET)
+        raw_dd.columns = [c.lower() for c in raw_dd.columns]
         if verbose:
             logger.info(
                 f"Read data dictionary with {raw_dd.shape[0]:,} rows and {raw_dd.shape[1]:,} cols"
             )
-        if self.VAR_NAME_COL not in raw_dd.columns:
+        if self.CODE_VAR_NAME_COL not in raw_dd.columns:
             raise KeyError("Data dictionary did not contain a column for varname.")
 
         # Create mappings
         data_dict = {}
-        for var_name, var_values in raw_dd.groupby(self.VAR_NAME_COL):
+        for var_name, var_values in raw_dd.groupby(self.CODE_VAR_NAME_COL):
             if var_name not in self.keep_raw_vars:
                 code_map = dict(
                     zip(var_values[self.CODE_VAL_COL], var_values[self.CODE_LABEL_COL]),
@@ -111,7 +115,8 @@ class IPEDSInstitutionCharacteristicsReader:
         and nicely formatted column names,
         e.g. 'ZIP' -> 'ZIP code' -> 'zip_code'
         """
-        raw_varnames = pd.read_excel(filepath, sheet_name=self.VAR_SHEET)
+        raw_varnames = read_excel_with_lowercase_sheets(filepath, sheet_name=self.VAR_SHEET)
+        raw_varnames.columns = [c.lower() for c in raw_varnames.columns]
         raw_varnames = raw_varnames[raw_varnames[self.VAR_NAME_COL] != "UNITID"]
         varname_dict = dict(
             zip(
