@@ -1,4 +1,5 @@
 from collections import namedtuple
+from pathlib import Path
 from typing import Any, Iterable, List, Union
 
 import numpy as np
@@ -188,3 +189,12 @@ def validate_and_listify(input: Any, cls: Iterable):
         if value not in allowed_values:
             raise ValueError(f"Value {value} not a valid member of {cls}")
     return input
+
+
+def read_excel_with_lowercase_sheets(filename: Path, sheet_name: str):
+    """Convenience function to read an Excel sheet, convert its sheet names to
+    lowercase, and then return the requested sheet name
+    """
+    all_sheets = pd.read_excel(filename, sheet_name=None)
+    all_sheets = {name.lower(): df for name, df in all_sheets.items()}
+    return all_sheets[sheet_name.lower()]

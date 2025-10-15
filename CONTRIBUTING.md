@@ -86,7 +86,7 @@ IPEDS releases new data yearly. Package maintainers can follow these steps to up
 
 1. Download the data from IPEDS and upload it to SfA's Google Cloud `scipeds-data` bucket in the respective folder. Make sure to grab both the new year of data as well as the previous year's revised data.
 1. Update the pipeline code that downloads the data. Make sure it uses the new year, and that both downloading directly from IPEDS (`make download-raw-from-ipeds`) and from Science for America's cloud storage (`make download-raw`) work.
-1. Process the data into a the duckdb file (`make process`).
+1. Process the data into the duckdb file (`make process`).
 1. Do a bit of sanity-checking on the new duckdb file to make sure you don't have unexpected new or missing columns in the metadata, and that the total number of students seems okay.
 
 !!! note
