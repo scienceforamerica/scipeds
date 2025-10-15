@@ -201,7 +201,7 @@ def institution_characteristics(
 
     varname_dict_dfs = []
     for year_dir in year_dirs:
-        reader = IPEDSInstitutionCharacteristicsReader(vintage=year_dir.name)
+        reader = IPEDSInstitutionCharacteristicsReader()
         dd_file = reader._find_datadict_file(year_dir)
         varname_dict_df = pd.DataFrame(
             reader._get_varname_dict(dd_file, verbose=verbose).items(),
@@ -218,7 +218,7 @@ def institution_characteristics(
     )
 
     for year_dir in tqdm(year_dirs):
-        reader = IPEDSInstitutionCharacteristicsReader(vintage=year_dir.name)
+        reader = IPEDSInstitutionCharacteristicsReader()
         if verbose:
             logger.info(f"Reading institutions characteristics data from {year_dir}")
         df = reader.read_institution_characteristics(
