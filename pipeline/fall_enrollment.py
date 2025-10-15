@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import typer
 from tqdm import tqdm
@@ -166,11 +167,23 @@ class IPEDSFallEnrollmentReader:
 
         # Translate states to abbreviations
         df["state_of_residence"] = df["state_of_residence"].str.strip()
-        df["state_of_residence"] = df["state_of_residence"].map(
-            FIPS_STATE_MAP
-        )
+        df["state_of_residence"] = df["state_of_residence"].map(FIPS_STATE_MAP)
 
-        return df
+        # Replace periods with NaN
+        df["first_time_students_recently_graduated_high_school"] = df[
+            "first_time_students_recently_graduated_high_school"
+        ].replace(".", np.nan)
+
+        # Return columns always in the same order
+        col_order = [
+            "unitid",
+            "year",
+            "state_of_residence",
+            "all_first_time_students",
+            "first_time_students_recently_graduated_high_school",
+        ]
+
+        return df[col_order]
 
     def read_year(self, folder: Path, verbose: bool = True) -> pd.DataFrame:
         try:
@@ -201,7 +214,7 @@ def fall_enrollment_residence(
         csv_dir = output_dir
         csv_dir.mkdir(parents=True, exist_ok=True)
         output_file = csv_dir / (year_dir.name + ".csv.gz")
-        df.to_csv(output_file, compression="gzip")
+        df.to_csv(output_file, compression="gzip", index=False)
         if verbose:
             logger.info(f"Wrote results for {year_dir.name} to {output_file}")
 
