@@ -6,7 +6,12 @@ import numpy as np
 import pandas as pd
 from pandas.testing import assert_frame_equal
 
-from scipeds.constants import CIP_TABLE, COMPLETIONS_TABLE, INSTITUTIONS_TABLE
+from scipeds.constants import (
+    CIP_TABLE,
+    COMPLETIONS_TABLE,
+    ENROLLMENT_RESIDENCE_TABLE,
+    INSTITUTIONS_TABLE,
+)
 from scipeds.data.completions import CompletionsQueryEngine
 from scipeds.data.enums import (
     AwardLevel,
@@ -60,6 +65,7 @@ class QueryEngineTests(unittest.TestCase):
             COMPLETIONS_TABLE,
             CIP_TABLE,
             INSTITUTIONS_TABLE,
+            ENROLLMENT_RESIDENCE_TABLE,
         ]
         returned_tables = self.engine.list_tables()
         self.assertCountEqual(expected_tables, returned_tables)

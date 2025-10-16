@@ -12,6 +12,7 @@ from scipeds.constants import (
     COMPLETIONS_TABLE,
     DB_NAME,
     END_YEAR,
+    ENROLLMENT_RESIDENCE_TABLE,
     INSTITUTIONS_TABLE,
     START_YEAR,
 )
@@ -172,11 +173,55 @@ def write_institutions_to_db(con: duckdb.DuckDBPyConnection, dir: Path, verbose:
         logger.info(f"\n{con.sql(f'DESCRIBE {INSTITUTIONS_TABLE}')}")
 
 
+def write_fall_enrollment_residence_to_db(
+    con: duckdb.DuckDBPyConnection, fall_enrollment_residence_dir: Path, verbose: bool = True
+):
+    """Read IPEDS data from interim CSVs into structured duckdb table"""
+
+    descriptions = {
+        "year": "IPEDS survey year",
+        "unitid": "UNITID of institution",
+        "state_of_residence": "",
+        "all_first_time_students": "",
+        "first_time_students_recently_graduated_high_school": "",
+    }
+
+    create_query = f"""
+        CREATE TABLE {ENROLLMENT_RESIDENCE_TABLE} AS (
+            SELECT * FROM read_csv('{str(fall_enrollment_residence_dir.resolve())}/*.csv.gz',
+                delim = ',',
+                header = true,
+                auto_detect = false,
+                columns = {{
+                    'unitid': 'UINTEGER',
+                    'year': 'USMALLINT',
+                    'state_of_residence': 'VARCHAR',
+                    'all_first_time_students': 'UINTEGER',
+                    'first_time_students_recently_graduated_high_school': 'UINTEGER',
+                }})
+        );
+    """
+    if verbose:
+        logger.info(f"Reading interim CSVs into table {ENROLLMENT_RESIDENCE_TABLE}")
+    con.execute(create_query)
+
+    # Add column descriptions
+    for col, desc in descriptions.items():
+        con.execute(f"COMMENT ON COLUMN {ENROLLMENT_RESIDENCE_TABLE}.{col} IS '{desc}'")
+
+    if verbose:
+        n_rows = con.sql(f"SELECT COUNT(*) FROM {ENROLLMENT_RESIDENCE_TABLE}").df().values[0]
+        logger.info(f"Created table {ENROLLMENT_RESIDENCE_TABLE} with {n_rows[0]:,} rows.")
+        logger.info(f"\n{con.sql(f'DESCRIBE {ENROLLMENT_RESIDENCE_TABLE}')}")
+
+
 @app.command()
 def write_db(
     output_file: Path = pipeline.settings.PROCESSED_DATA_DIR / DB_NAME,
     completions_dir: Path = pipeline.settings.INTERIM_DATA_DIR / COMPLETIONS_TABLE,
     institutions_dir: Path = pipeline.settings.INTERIM_DATA_DIR / INSTITUTIONS_TABLE,
+    enrollment_residence_dir: Path = pipeline.settings.INTERIM_DATA_DIR
+    / ENROLLMENT_RESIDENCE_TABLE,
     overwrite: bool = False,
     verbose: bool = True,
 ):
@@ -194,6 +239,7 @@ def write_db(
     con = duckdb.connect(con_str)
     write_completions_to_db(con, completions_dir, verbose=verbose)
     write_institutions_to_db(con, institutions_dir, verbose=verbose)
+    write_fall_enrollment_residence_to_db(con, enrollment_residence_dir, verbose=verbose)
     con.close()
     if verbose:
         logger.info(f"Wrote duckdb file to {output_file}")
@@ -229,8 +275,8 @@ def fake_institution_data() -> pd.DataFrame:
         {"unitid": "1", "institution_name": "University 1"},
         {"unitid": "2", "institution_name": "University 2"},
     ]
-    meta = pd.DataFrame.from_records(data)
-    return meta
+    df = pd.DataFrame.from_records(data)
+    return df
 
 
 def fake_completions_data() -> pd.DataFrame:
@@ -293,6 +339,28 @@ def fake_completions_data() -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def fake_fall_enrollment_residence_data() -> pd.DataFrame:
+    """Construct fake fall enrollment residence data for testing purposes"""
+    data = [
+        {
+            "unitid": "1",
+            "year": 2023,
+            "state_of_residence": "AL",
+            "all_first_time_students": 100,
+            "first_time_students_recently_graduated_high_school": 50,
+        },
+        {
+            "unitid": "2",
+            "year": 2023,
+            "state_of_residence": "TX",
+            "all_first_time_students": 1000,
+            "first_time_students_recently_graduated_high_school": 250,
+        },
+    ]
+    df = pd.DataFrame.from_records(data)
+    return df
+
+
 @app.command()
 def write_test_db(output_dir: Path = pipeline.settings.LIBRARY_ROOT / "data" / "tests" / "assets"):
     """Create a duckdb for testing purposes"""
@@ -315,6 +383,16 @@ def write_test_db(output_dir: Path = pipeline.settings.LIBRARY_ROOT / "data" / "
     institutions_df = fake_institution_data()
     institutions_df.to_csv(institutions_csv.name, index=False, compression="gzip")
 
+    # Generate temporary intermediate CSVs for fall enrollment residence
+    fall_enrollment_residence_dir = tempfile.TemporaryDirectory(dir=Path(temp_dir.name))
+    fall_enrollment_residence_csv = tempfile.NamedTemporaryFile(
+        dir=Path(fall_enrollment_residence_dir.name), suffix=".csv.gz"
+    )
+    fall_enrollment_residence_df = fake_fall_enrollment_residence_data()
+    fall_enrollment_residence_df.to_csv(
+        fall_enrollment_residence_csv.name, index=False, compression="gzip"
+    )
+
     # Write everything to CSV
     temp_db = output_dir / "test.duckdb"
     if temp_db.exists():
@@ -322,12 +400,16 @@ def write_test_db(output_dir: Path = pipeline.settings.LIBRARY_ROOT / "data" / "
     con = duckdb.connect(str(temp_db))
     write_completions_to_db(con, Path(completions_dir.name))
     write_institutions_to_db(con, Path(institutions_dir.name))
+    write_fall_enrollment_residence_to_db(con, Path(fall_enrollment_residence_dir.name))
     con.close()
 
     completions_csv.close()
     institutions_csv.close()
+    fall_enrollment_residence_csv.close()
+
     completions_dir.cleanup()
     institutions_dir.cleanup()
+    fall_enrollment_residence_dir.cleanup()
     temp_dir.cleanup()
 
 
