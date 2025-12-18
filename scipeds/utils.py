@@ -137,7 +137,7 @@ def calculate_effect_size(
     return df
 
 
-def get_zscore(df: pd.DataFrame, subgroup: Rate, baseline: Rate) -> float:
+def get_zscore(df: pd.DataFrame, subgroup: Rate, baseline: Rate) -> pd.Series[float]:
     """Calculate test statistic using 2-sample test for proportions"""
     group_count, group_obs = df[subgroup.numerator], df[subgroup.denominator]
     base_count, base_obs = df[baseline.numerator], df[baseline.denominator]

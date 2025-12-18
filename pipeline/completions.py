@@ -202,7 +202,7 @@ class IPEDSCompletionsReader:
         # Stack race/gender into columns to make tidy
         df = df[list(col_map.keys())]
         df.columns = df.columns.map(col_map)
-        df.columns.rename(["race_ethnicity", "gender"], inplace=True)
+        df.columns.set_names(["race_ethnicity", "gender"], inplace=True)
         if verbose:
             logger.info(
                 f"Stacking table with {df.shape[0]:,} rows and {df.shape[1]:,} cols "
