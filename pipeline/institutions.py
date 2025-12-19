@@ -38,8 +38,6 @@ class IPEDSInstitutionCharacteristicsReader:
         """Constructor
 
         Args:
-            vintage (string, option): The vintage/year of IPEDS data being read, which
-                defines data/column formats.
             keep_raw_vars (Collection, optional): Name of variables to keep
                 un-translated as their raw values. Defaults to None.
         """
@@ -195,13 +193,13 @@ def institution_characteristics(
     verbose: bool = True,
 ):
     """CLI Entrypoint for processing IPEDS institution characteristics"""
-
+    
+    reader = IPEDSInstitutionCharacteristicsReader()
     year_dirs = sorted([d for d in metadata_dir.iterdir() if d.is_dir()])
     dfs = []
 
     varname_dict_dfs = []
     for year_dir in year_dirs:
-        reader = IPEDSInstitutionCharacteristicsReader()
         dd_file = reader._find_datadict_file(year_dir)
         varname_dict_df = pd.DataFrame(
             reader._get_varname_dict(dd_file, verbose=verbose).items(),
@@ -218,7 +216,6 @@ def institution_characteristics(
     )
 
     for year_dir in tqdm(year_dirs):
-        reader = IPEDSInstitutionCharacteristicsReader()
         if verbose:
             logger.info(f"Reading institutions characteristics data from {year_dir}")
         df = reader.read_institution_characteristics(
