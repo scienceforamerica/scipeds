@@ -8,8 +8,8 @@ from tqdm import tqdm
 import pipeline.settings
 from pipeline.settings import logger
 from scipeds import constants
-from scipeds.utils import clean_name
 from scipeds.data.enums import Geo
+from scipeds.utils import clean_name
 
 ENROLLMENT_RESIDENCE_CODES = {
     "line": "state_of_residence",

@@ -25,6 +25,7 @@ from scipeds.data.queries import CompletionsQueryFilters, TaxonomyRollup
 
 # TODO: add tests for year ranges for completions and enrollment queryfilters
 
+
 class QueryEngineTests(unittest.TestCase):
     def setUp(self):
         # We want to replicate the process for creating the duckdb as closely as we can
@@ -150,7 +151,9 @@ class QueryEngineTests(unittest.TestCase):
         # Only looking for "unknown" race/ethnicity is okay
         with warnings.catch_warnings():
             warnings.simplefilter("error", UserWarning)
-            filters = CompletionsQueryFilters(start_year=1991, end_year=1995, race_ethns=[RaceEthn.unknown])
+            filters = CompletionsQueryFilters(
+                start_year=1991, end_year=1995, race_ethns=[RaceEthn.unknown]
+            )
 
         result = self.engine.field_totals_by_grouping(
             grouping=Grouping.gender,

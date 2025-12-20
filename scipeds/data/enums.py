@@ -367,9 +367,10 @@ class NSFBroadField(str, Enum):
     non_stem = "Non-science and engineering"
     unknown = "Not categorized in NSF broad field classification"
 
+
 class Geo(str, Enum):
     """Enumeration for US states, territories, and other location categories in IPEDS data"""
-    
+
     AL = "Alabama"
     AK = "Alaska"
     AZ = "Arizona"
@@ -436,6 +437,7 @@ class Geo(str, Enum):
     unknown = "Unknown"
     balance_line = "Balance Line"
     grand_total = "Grand Total"
+
 
 # Hierarchical relationships in the NCSES Alternative Classification
 NCSES_HIERARCHY = {

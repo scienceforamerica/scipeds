@@ -38,7 +38,8 @@ INSTITUTION_METADATA_FILENAMES = {
     year: f"{BASE_URL}/HD{year}.zip" for year in range(constants.FALL_SURVEYS_END_YEAR, 2010, -1)
 }
 INSTITUTION_METADATA_DATADICTS = {
-    year: f"{BASE_URL}/HD{year}_Dict.zip" for year in range(constants.FALL_SURVEYS_END_YEAR, 2010, -1)
+    year: f"{BASE_URL}/HD{year}_Dict.zip"
+    for year in range(constants.FALL_SURVEYS_END_YEAR, 2010, -1)
 }
 
 # CIP Code Crosswalk files
@@ -54,7 +55,8 @@ CROSSWALK_ZIP_FILENAMES = {
 # Fall enrollment residence files
 # Most recent data is one year behind Completions
 ENROLLMENT_RESIDENCE_FILENAMES = {
-    year: f"{BASE_URL}/EF{year}C.zip" for year in range(constants.SPRING_SURVEYS_END_YEAR, 2000, -1)
+    year: f"{BASE_URL}/EF{year}C.zip"
+    for year in range(constants.SPRING_SURVEYS_END_YEAR, 2000, -1)
 }
 ENROLLMENT_RESIDENCE_FILENAMES.update(
     {year: f"{BASE_URL}/EF{str(year)[-2:]}_C.zip" for year in [1998, 1996]}

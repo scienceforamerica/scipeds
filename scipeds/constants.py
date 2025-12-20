@@ -17,7 +17,7 @@ ENROLLMENT_RESIDENCE_TABLE = "fall_enrollment_residence"
 START_YEAR = 1984
 END_YEAR = 2024
 
-# Surveys have different years available, based on their release schedule: 
+# Surveys have different years available, based on their release schedule:
 # https://nces.ed.gov/ipeds/survey-components/data-release-schedule
 FALL_SURVEYS_START_YEAR = 1984
 FALL_SURVEYS_END_YEAR = 2024

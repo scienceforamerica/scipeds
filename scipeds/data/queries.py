@@ -5,7 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from typing_extensions import Annotated
 
 from scipeds import constants
-from scipeds.data.enums import AwardLevel, FieldTaxonomy, RaceEthn, Geo
+from scipeds.data.enums import AwardLevel, FieldTaxonomy, Geo, RaceEthn
 from scipeds.utils import validate_and_listify
 
 
@@ -70,21 +70,20 @@ class BaseQueryFilters(BaseModel):
         """
         if self.start_year > self.end_year:
             raise ValueError("Start year must be less than or equal to end year")
-        
-        return self
-    
-class CompletionsQueryFilters(BaseQueryFilters):
 
-    start_year: Annotated[int, Field(ge=constants.FALL_SURVEYS_START_YEAR, le=constants.FALL_SURVEYS_END_YEAR)] = (
-        constants.START_YEAR
-    )
+        return self
+
+
+class CompletionsQueryFilters(BaseQueryFilters):
+    start_year: Annotated[
+        int, Field(ge=constants.FALL_SURVEYS_START_YEAR, le=constants.FALL_SURVEYS_END_YEAR)
+    ] = constants.START_YEAR
     """The start year of the time window to aggregate over, inclusive"""
 
-    end_year: Annotated[int, Field(ge=constants.FALL_SURVEYS_START_YEAR, le=constants.FALL_SURVEYS_END_YEAR)] = (
-        constants.END_YEAR
-    )
+    end_year: Annotated[
+        int, Field(ge=constants.FALL_SURVEYS_START_YEAR, le=constants.FALL_SURVEYS_END_YEAR)
+    ] = constants.END_YEAR
     """The end year of the time window to aggregate over, inclusive"""
-
 
     race_ethns: List[RaceEthn] = list(RaceEthn)
     """ Which race/ethnicity groups to include (default: all)"""
@@ -133,6 +132,7 @@ class CompletionsQueryFilters(BaseQueryFilters):
             v = [v]
         return v
 
+
 # Backward compatibility alias with deprecation warning
 class QueryFilters(CompletionsQueryFilters):
     def __init__(self, **kwargs):
@@ -140,25 +140,25 @@ class QueryFilters(CompletionsQueryFilters):
             "QueryFilters is deprecated and will be removed in a future version. "
             "Use CompletionsQueryFilters instead.",
             FutureWarning,
-            stacklevel=2
+            stacklevel=2,
         )
         super().__init__(**kwargs)
 
-class FallEnrollmentQueryFilters(BaseQueryFilters):
 
-    start_year: Annotated[int, Field(ge=constants.SPRING_SURVEYS_START_YEAR, le=constants.SPRING_SURVEYS_END_YEAR)] = (
-        constants.START_YEAR
-    )
+class FallEnrollmentQueryFilters(BaseQueryFilters):
+    start_year: Annotated[
+        int, Field(ge=constants.SPRING_SURVEYS_START_YEAR, le=constants.SPRING_SURVEYS_END_YEAR)
+    ] = constants.START_YEAR
     """The start year of the time window to aggregate over, inclusive"""
 
-    end_year: Annotated[int, Field(ge=constants.SPRING_SURVEYS_START_YEAR, le=constants.SPRING_SURVEYS_END_YEAR)] = (
-        constants.END_YEAR
-    )
+    end_year: Annotated[
+        int, Field(ge=constants.SPRING_SURVEYS_START_YEAR, le=constants.SPRING_SURVEYS_END_YEAR)
+    ] = constants.END_YEAR
     """The end year of the time window to aggregate over, inclusive"""
 
     geos: List[Geo] = list(Geo)
     """ Which geographic locations to include (default: all)"""
-    
+
     @field_validator("geos", mode="before")
     @classmethod
     def geo_valid(cls, v: Any):
