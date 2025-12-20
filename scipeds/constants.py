@@ -13,9 +13,17 @@ INSTITUTIONS_TABLE = "ipeds_directory_info"
 CIP_TABLE = "cip_info"
 ENROLLMENT_RESIDENCE_TABLE = "fall_enrollment_residence"
 
-# Start and end year for analysis
+# Start and end year for all data
 START_YEAR = 1984
 END_YEAR = 2024
+
+# Surveys have different years available, based on their release schedule: 
+# https://nces.ed.gov/ipeds/survey-components/data-release-schedule
+FALL_SURVEYS_START_YEAR = 1984
+FALL_SURVEYS_END_YEAR = 2024
+
+SPRING_SURVEYS_START_YEAR = 1986
+SPRING_SURVEYS_END_YEAR = 2023
 
 # Storage bucket
 SCIPEDS_BUCKET = "scipeds-data"

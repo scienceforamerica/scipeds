@@ -9,6 +9,7 @@ import pipeline.settings
 from pipeline.settings import logger
 from scipeds import constants
 from scipeds.utils import clean_name
+from scipeds.data.enums import Geo
 
 ENROLLMENT_RESIDENCE_CODES = {
     "line": "state_of_residence",
@@ -24,85 +25,85 @@ ENROLLMENT_RESIDENCE_CODES = {
 }
 
 FIPS_STATE_MAP = {
-    "1": "AL",  # Alabama
-    "2": "AK",  # Alaska
-    "4": "AZ",  # Arizona
-    "5": "AR",  # Arkansas
-    "6": "CA",  # California
-    "8": "CO",  # Colorado
-    "9": "CT",  # Connecticut
-    "01": "AL",  # Alabama
-    "02": "AK",  # Alaska
-    "04": "AZ",  # Arizona
-    "05": "AR",  # Arkansas
-    "06": "CA",  # California
-    "08": "CO",  # Colorado
-    "09": "CT",  # Connecticut
-    "10": "DE",  # Delaware
-    "11": "DC",  # District of Columbia
-    "12": "FL",  # Florida
-    "13": "GA",  # Georgia
-    "15": "HI",  # Hawaii
-    "16": "ID",  # Idaho
-    "17": "IL",  # Illinois
-    "18": "IN",  # Indiana
-    "19": "IA",  # Iowa
-    "20": "KS",  # Kansas
-    "21": "KY",  # Kentucky
-    "22": "LA",  # Louisiana
-    "23": "ME",  # Maine
-    "24": "MD",  # Maryland
-    "25": "MA",  # Massachusetts
-    "26": "MI",  # Michigan
-    "27": "MN",  # Minnesota
-    "28": "MS",  # Mississippi
-    "29": "MO",  # Missouri
-    "30": "MT",  # Montana
-    "31": "NE",  # Nebraska
-    "32": "NV",  # Nevada
-    "33": "NH",  # New Hampshire
-    "34": "NJ",  # New Jersey
-    "35": "NM",  # New Mexico
-    "36": "NY",  # New York
-    "37": "NC",  # North Carolina
-    "38": "ND",  # North Dakota
-    "39": "OH",  # Ohio
-    "40": "OK",  # Oklahoma
-    "41": "OR",  # Oregon
-    "42": "PA",  # Pennsylvania
-    "44": "RI",  # Rhode Island
-    "45": "SC",  # South Carolina
-    "46": "SD",  # South Dakota
-    "47": "TN",  # Tennessee
-    "48": "TX",  # Texas
-    "49": "UT",  # Utah
-    "50": "VT",  # Vermont
-    "51": "VA",  # Virginia
-    "53": "WA",  # Washington
-    "54": "WV",  # West Virginia
-    "55": "WI",  # Wisconsin
-    "56": "WY",  # Wyoming
+    "1": Geo.AL,
+    "2": Geo.AK,
+    "4": Geo.AZ,
+    "5": Geo.AR,
+    "6": Geo.CA,
+    "8": Geo.CO,
+    "9": Geo.CT,
+    "01": Geo.AL,
+    "02": Geo.AK,
+    "04": Geo.AZ,
+    "05": Geo.AR,
+    "06": Geo.CA,
+    "08": Geo.CO,
+    "09": Geo.CT,
+    "10": Geo.DE,
+    "11": Geo.DC,
+    "12": Geo.FL,
+    "13": Geo.GA,
+    "15": Geo.HI,
+    "16": Geo.ID,
+    "17": Geo.IL,
+    "18": Geo.IN,
+    "19": Geo.IA,
+    "20": Geo.KS,
+    "21": Geo.KY,
+    "22": Geo.LA,
+    "23": Geo.ME,
+    "24": Geo.MD,
+    "25": Geo.MA,
+    "26": Geo.MI,
+    "27": Geo.MN,
+    "28": Geo.MS,
+    "29": Geo.MO,
+    "30": Geo.MT,
+    "31": Geo.NE,
+    "32": Geo.NV,
+    "33": Geo.NH,
+    "34": Geo.NJ,
+    "35": Geo.NM,
+    "36": Geo.NY,
+    "37": Geo.NC,
+    "38": Geo.ND,
+    "39": Geo.OH,
+    "40": Geo.OK,
+    "41": Geo.OR,
+    "42": Geo.PA,
+    "44": Geo.RI,
+    "45": Geo.SC,
+    "46": Geo.SD,
+    "47": Geo.TN,
+    "48": Geo.TX,
+    "49": Geo.UT,
+    "50": Geo.VT,
+    "51": Geo.VA,
+    "53": Geo.WA,
+    "54": Geo.WV,
+    "55": Geo.WI,
+    "56": Geo.WY,
     # Territories
-    "60": "AS",  # American Samoa
-    "64": "FM",  # Federated States of Micronesia
-    "66": "GU",  # Guam
-    "59": "GU",  # Guam (in older data)
-    "68": "MH",  # Marshall Islands
-    "69": "MP",  # Northern Marianas
-    "70": "PW",  # Palau
-    "72": "PR",  # Puerto Rico
-    "61": "PR",  # Puerto Rico (in older data)
-    "78": "VI",  # Virgin Islands
-    "63": "VI",  # Virgin Islands (in older data)
-    "62": "TTPI",  # Trust Territory of the Pacific Islands
+    "60": Geo.AS,
+    "64": Geo.FM,
+    "66": Geo.GU,
+    "59": Geo.GU,
+    "68": Geo.MH,
+    "69": Geo.MP,
+    "70": Geo.PW,
+    "72": Geo.PR,
+    "61": Geo.PR,
+    "78": Geo.VI,
+    "63": Geo.VI,
+    "62": Geo.TTPI,
     # Others
-    "90": "foreign_countries",  # Foreign Countries
-    "58": "us_total",  # US total
-    "89": "outlying_areas_total",
-    "57": "unknown",  # Unknown
-    "98": "balance_line",  # Balance line
-    "99": "grand_total",  # Grand Total
-    "65": "grand_total",  # Grand total, older data
+    "90": Geo.foreign_countries,
+    "58": Geo.us_total,
+    "89": Geo.outlying_areas_total,
+    "57": Geo.unknown,
+    "98": Geo.balance_line,
+    "99": Geo.grand_total,
+    "65": Geo.grand_total,
 }
 
 assert len(FIPS_STATE_MAP.keys()) == len(set(FIPS_STATE_MAP.keys()))

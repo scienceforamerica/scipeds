@@ -209,6 +209,7 @@ def write_fall_enrollment_residence_to_db(
     for col, desc in descriptions.items():
         con.execute(f"COMMENT ON COLUMN {ENROLLMENT_RESIDENCE_TABLE}.{col} IS '{desc}'")
 
+    # TODO: change state_of_residence to be an enum
     if verbose:
         n_rows = con.sql(f"SELECT COUNT(*) FROM {ENROLLMENT_RESIDENCE_TABLE}").df().values[0]
         logger.info(f"Created table {ENROLLMENT_RESIDENCE_TABLE} with {n_rows[0]:,} rows.")

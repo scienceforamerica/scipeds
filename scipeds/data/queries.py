@@ -5,7 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from typing_extensions import Annotated
 
 from scipeds import constants
-from scipeds.data.enums import AwardLevel, FieldTaxonomy, RaceEthn
+from scipeds.data.enums import AwardLevel, FieldTaxonomy, RaceEthn, Geo
 from scipeds.utils import validate_and_listify
 
 
@@ -34,13 +34,15 @@ class TaxonomyRollup(BaseModel):
         return v
 
 
-class QueryFilters(BaseModel):
+class BaseQueryFilters(BaseModel):
     """A pydantic model with options for how to filter the baseline data prior to any aggregation.
+
+    This is the base model, with filters that apply to all IPEDS datasets.
 
     The model will handle data validation for the input values by ensuring:
 
     - The years are in range and the range is nonzero
-    - The race/ethnicity and degree values provided are valid
+    - The race/ethnicity and degree values (if provided) are valid
     - Things that ought to be lists are lists
     """
 
@@ -56,6 +58,34 @@ class QueryFilters(BaseModel):
     )
     """The end year of the time window to aggregate over, inclusive"""
 
+    @model_validator(mode="after")
+    def check_year_range(self):
+        """Validate year values
+
+        Warns:
+            UserWarning: If time range overlaps significant changes in IPEDS schema or values
+
+        Raises:
+            ValueError: If provided start_year is after end_year
+        """
+        if self.start_year > self.end_year:
+            raise ValueError("Start year must be less than or equal to end year")
+        
+        return self
+    
+class CompletionsQueryFilters(BaseQueryFilters):
+
+    start_year: Annotated[int, Field(ge=constants.FALL_SURVEYS_START_YEAR, le=constants.FALL_SURVEYS_END_YEAR)] = (
+        constants.START_YEAR
+    )
+    """The start year of the time window to aggregate over, inclusive"""
+
+    end_year: Annotated[int, Field(ge=constants.FALL_SURVEYS_START_YEAR, le=constants.FALL_SURVEYS_END_YEAR)] = (
+        constants.END_YEAR
+    )
+    """The end year of the time window to aggregate over, inclusive"""
+
+
     race_ethns: List[RaceEthn] = list(RaceEthn)
     """ Which race/ethnicity groups to include (default: all)"""
 
@@ -64,6 +94,24 @@ class QueryFilters(BaseModel):
 
     majornums: List[Annotated[int, Field(ge=1, le=2)]] = [1, 2]
     """Which major numbers to include (default: both first and second majors)"""
+
+    @model_validator(mode="after")
+    def check_year_range_and_race_ethnicities(self):
+        # Warn if time range overlaps span where racial categorization changes
+        if self.start_year <= 2010 and self.end_year >= 2011:
+            warnings.warn(
+                "IPEDS award level coding and race and ethnicity coding changed "
+                "between 2010 and 2011 datasets. For more details, see "
+                "https://docs.scipeds.org/faq/#what-data-is-currently-included-in-scipeds"
+            )
+        if (self.start_year < 1995 or self.end_year < 1995) and self.race_ethns != [
+            RaceEthn.unknown
+        ]:
+            warnings.warn(
+                "Race/ethnicity data is not available before 1995. All race/ethnicities "
+                "prior to 1995 are treated as 'unknown'."
+            )
+        return self
 
     @field_validator("race_ethns", mode="before")
     @classmethod
@@ -85,30 +133,33 @@ class QueryFilters(BaseModel):
             v = [v]
         return v
 
-    @model_validator(mode="after")
-    def check_year_range(self):
-        """Validate year values
+# Backward compatibility alias with deprecation warning
+class QueryFilters(CompletionsQueryFilters):
+    def __init__(self, **kwargs):
+        warnings.warn(
+            "QueryFilters is deprecated and will be removed in a future version. "
+            "Use CompletionsQueryFilters instead.",
+            FutureWarning,
+            stacklevel=2
+        )
+        super().__init__(**kwargs)
 
-        Warns:
-            UserWarning: If time range overlaps significant changes in IPEDS schema or values
+class FallEnrollmentQueryFilters(BaseQueryFilters):
 
-        Raises:
-            ValueError: If provided start_year is after end_year
-        """
-        if self.start_year > self.end_year:
-            raise ValueError("Start year must be less than or equal to end year")
-        # Warn if time range overlaps span where racial categorization changes
-        if self.start_year <= 2010 and self.end_year >= 2011:
-            warnings.warn(
-                "IPEDS award level coding and race and ethnicity coding changed "
-                "between 2010 and 2011 datasets. For more details, see "
-                "https://docs.scipeds.org/faq/#what-data-is-currently-included-in-scipeds"
-            )
-        if (self.start_year < 1995 or self.end_year < 1995) and self.race_ethns != [
-            RaceEthn.unknown
-        ]:
-            warnings.warn(
-                "Race/ethnicity data is not available before 1995. All race/ethnicities "
-                "prior to 1995 are treated as 'unknown'."
-            )
-        return self
+    start_year: Annotated[int, Field(ge=constants.SPRING_SURVEYS_START_YEAR, le=constants.SPRING_SURVEYS_END_YEAR)] = (
+        constants.START_YEAR
+    )
+    """The start year of the time window to aggregate over, inclusive"""
+
+    end_year: Annotated[int, Field(ge=constants.SPRING_SURVEYS_START_YEAR, le=constants.SPRING_SURVEYS_END_YEAR)] = (
+        constants.END_YEAR
+    )
+    """The end year of the time window to aggregate over, inclusive"""
+
+    geos: List[Geo] = list(Geo)
+    """ Which geographic locations to include (default: all)"""
+    
+    @field_validator("geos", mode="before")
+    @classmethod
+    def geo_valid(cls, v: Any):
+        return validate_and_listify(v, Geo)

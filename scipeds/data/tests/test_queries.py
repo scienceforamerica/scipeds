@@ -21,8 +21,9 @@ from scipeds.data.enums import (
     NCSESSciGroup,
     RaceEthn,
 )
-from scipeds.data.queries import QueryFilters, TaxonomyRollup
+from scipeds.data.queries import CompletionsQueryFilters, TaxonomyRollup
 
+# TODO: add tests for year ranges for completions and enrollment queryfilters
 
 class QueryEngineTests(unittest.TestCase):
     def setUp(self):
@@ -115,7 +116,7 @@ class QueryEngineTests(unittest.TestCase):
     def test_filters(self):
         # Filtering out bachelors should give us an empty dataset
         with self.assertWarnsRegex(UserWarning, "IPEDS"):
-            filters = QueryFilters(award_levels=[AwardLevel.masters])
+            filters = CompletionsQueryFilters(award_levels=[AwardLevel.masters])
         fields_agg = TaxonomyRollup(
             taxonomy_name=FieldTaxonomy.ncses_sci_group, taxonomy_values=NCSESSciGroup.sci
         )
@@ -134,7 +135,7 @@ class QueryEngineTests(unittest.TestCase):
 
         # Wrong year should also give missing values
         with self.assertWarnsRegex(UserWarning, "IPEDS"):
-            filters = QueryFilters(start_year=1996, end_year=2021)
+            filters = CompletionsQueryFilters(start_year=1996, end_year=2021)
         result = self.engine.rollup_by_grouping(
             grouping=Grouping.gender, rollup=fields_agg, query_filters=filters
         )
@@ -142,14 +143,14 @@ class QueryEngineTests(unittest.TestCase):
 
         # Trying to recover race/ethnicity data prior to 1995 raises a warning
         with self.assertWarnsRegex(UserWarning, "Race/ethnicity"):
-            filters = QueryFilters(
+            filters = CompletionsQueryFilters(
                 start_year=1991, end_year=1995, race_ethns=[RaceEthn.two_or_more]
             )
 
         # Only looking for "unknown" race/ethnicity is okay
         with warnings.catch_warnings():
             warnings.simplefilter("error", UserWarning)
-            filters = QueryFilters(start_year=1991, end_year=1995, race_ethns=[RaceEthn.unknown])
+            filters = CompletionsQueryFilters(start_year=1991, end_year=1995, race_ethns=[RaceEthn.unknown])
 
         result = self.engine.field_totals_by_grouping(
             grouping=Grouping.gender,
@@ -160,7 +161,7 @@ class QueryEngineTests(unittest.TestCase):
 
         # Filtering to missing race/ethnicity category should yield nothing
         with self.assertWarnsRegex(UserWarning, "IPEDS"):
-            filters = QueryFilters(race_ethns=[RaceEthn.unknown])
+            filters = CompletionsQueryFilters(race_ethns=[RaceEthn.unknown])
         result = self.engine.rollup_by_grouping(
             grouping=Grouping.gender, rollup=fields_agg, query_filters=filters
         )
@@ -175,7 +176,7 @@ class QueryEngineTests(unittest.TestCase):
 
         # Missing majornums should yield nothing
         with self.assertWarnsRegex(UserWarning, "IPEDS"):
-            filters = QueryFilters(majornums=2)
+            filters = CompletionsQueryFilters(majornums=2)
         result = self.engine.field_totals_by_grouping(
             grouping=Grouping.gender,
             taxonomy=FieldTaxonomy.ncses_field_group,
@@ -190,7 +191,7 @@ class QueryEngineTests(unittest.TestCase):
             taxonomy_values=[NCSESDetailedFieldGroup.math_stats],
         )
         with self.assertWarnsRegex(UserWarning, "IPEDS"):
-            filters = QueryFilters()
+            filters = CompletionsQueryFilters()
 
         index_cols = [
             "gender",
@@ -351,7 +352,7 @@ class QueryEngineTests(unittest.TestCase):
 
     def test_group_fields_query(self):
         with self.assertWarnsRegex(UserWarning, "IPEDS"):
-            filters = QueryFilters()
+            filters = CompletionsQueryFilters()
         index_cols = [
             "ncses_detailed_field_group",
             "gender",
@@ -541,7 +542,7 @@ class QueryEngineTests(unittest.TestCase):
     def test_uni_query(self):
         # Test gender
         with self.assertWarnsRegex(UserWarning, "IPEDS"):
-            filters = QueryFilters()
+            filters = CompletionsQueryFilters()
         fields_agg = TaxonomyRollup(
             taxonomy_name=FieldTaxonomy.ncses_sci_group, taxonomy_values=NCSESSciGroup.sci
         )
@@ -682,7 +683,7 @@ class QueryEngineTests(unittest.TestCase):
     def test_uni_fields_query(self):
         # Test gender
         with self.assertWarnsRegex(UserWarning, "IPEDS"):
-            filters = QueryFilters()
+            filters = CompletionsQueryFilters()
         index_cols = [
             "institution_name",
             "unitid",
@@ -874,7 +875,7 @@ class QueryEngineTests(unittest.TestCase):
 
     def test_rel_rate(self):
         with self.assertWarnsRegex(UserWarning, "IPEDS"):
-            filters = QueryFilters()
+            filters = CompletionsQueryFilters()
         for grouping in Grouping:
             for taxonomy in FieldTaxonomy:
                 for yearly in (True, False):
@@ -891,7 +892,7 @@ class QueryEngineTests(unittest.TestCase):
 
     def test_effect_size(self):
         with self.assertWarnsRegex(UserWarning, "IPEDS"):
-            filters = QueryFilters()
+            filters = CompletionsQueryFilters()
         taxonomies = [
             FieldTaxonomy.ncses_detailed_field_group,
             FieldTaxonomy.dhs_stem,
