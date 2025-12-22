@@ -6,64 +6,64 @@ from pydantic import ValidationError
 
 from scipeds import constants
 from scipeds.data.enums import AwardLevel, FieldTaxonomy, Grouping, RaceEthn
-from scipeds.data.queries import QueryFilters, TaxonomyRollup
+from scipeds.data.queries import CompletionsQueryFilters, TaxonomyRollup
 
 
-class QueryFilterTests(unittest.TestCase):
+class CompletionsQueryFilterTests(unittest.TestCase):
     def test_years(self):
         # Bad year ranges fail validation
         with self.assertRaises(ValidationError):
-            QueryFilters(start_year=2000, end_year=1999)
+            CompletionsQueryFilters(start_year=2000, end_year=1999)
 
         # Race/ethnicity change year span raises warning
         with self.assertWarnsRegex(UserWarning, "IPEDS"):
-            QueryFilters(start_year=2010, end_year=2011)
+            CompletionsQueryFilters(start_year=2010, end_year=2011)
 
             # Default query filter produces default values
-            qf = QueryFilters()
+            qf = CompletionsQueryFilters()
         assert qf.start_year == constants.START_YEAR
         assert qf.end_year == constants.END_YEAR
 
         # Adding values outside the bounds won't validate
         with self.assertRaises(ValidationError):
-            QueryFilters(start_year=constants.START_YEAR - 1)
+            CompletionsQueryFilters(start_year=constants.START_YEAR - 1)
         with self.assertRaises(ValidationError):
-            QueryFilters(end_year=constants.END_YEAR + 1)
+            CompletionsQueryFilters(end_year=constants.END_YEAR + 1)
 
     def test_race_ethns(self):
         # Adding singular values yields lists
         with self.assertWarnsRegex(UserWarning, "IPEDS"):
-            qf = QueryFilters(race_ethns=RaceEthn.american_indian)
+            qf = CompletionsQueryFilters(race_ethns=RaceEthn.american_indian)
         assert qf.race_ethns == [RaceEthn.american_indian]
 
         # Correct strings are okay
         with self.assertWarnsRegex(UserWarning, "IPEDS"):
-            qf = QueryFilters(race_ethns=[RaceEthn.american_indian])
+            qf = CompletionsQueryFilters(race_ethns=[RaceEthn.american_indian])
         assert qf.race_ethns == [RaceEthn.american_indian]
 
         # Unidentified values fail
         with self.assertRaises(ValidationError):
-            QueryFilters(race_ethns=["male"])
+            CompletionsQueryFilters(race_ethns=["male"])
 
     def test_degrees(self):
         # Adding singular values yields lists
         with self.assertWarnsRegex(UserWarning, "IPEDS"):
-            qf = QueryFilters(award_levels=AwardLevel.bachelors)
+            qf = CompletionsQueryFilters(award_levels=AwardLevel.bachelors)
         assert qf.award_levels == [AwardLevel.bachelors]
 
         # Correct strings are okay
         with self.assertWarnsRegex(UserWarning, "IPEDS"):
-            qf = QueryFilters(race_ethns=[RaceEthn.american_indian.value])
+            qf = CompletionsQueryFilters(race_ethns=[RaceEthn.american_indian.value])
         assert qf.race_ethns == [RaceEthn.american_indian]
 
         # Unidentified values fail
         with self.assertRaises(ValidationError):
-            QueryFilters(race_ethns=["male"])
+            CompletionsQueryFilters(race_ethns=["male"])
 
     def test_majornum(self):
         # Value of 3 fails
         with self.assertRaises(ValidationError):
-            QueryFilters(majornums=[3])
+            CompletionsQueryFilters(majornums=[3])
 
 
 class FieldTaxonomyTests(unittest.TestCase):
