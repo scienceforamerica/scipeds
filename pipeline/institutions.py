@@ -207,12 +207,15 @@ def institution_characteristics(
         varname_dict_df["metadata_vintage"] = int(year_dir.name)
         varname_dict_dfs.append(varname_dict_df)
     varname_dict_combined = pd.concat(varname_dict_dfs, ignore_index=True)
-    varname_dict_latest = (
-        varname_dict_combined.sort_values(by="metadata_vintage", ascending=False)
-        .groupby("original_colname")["mapped_colname"]
-        .first()
-        .to_dict()
-    )
+    varname_dict_latest = {
+        str(k): v
+        for k, v in (
+            varname_dict_combined.sort_values(by="metadata_vintage", ascending=False)
+            .groupby("original_colname")["mapped_colname"]
+            .first()
+            .items()
+        )
+    }
 
     for year_dir in tqdm(year_dirs):
         if verbose:
