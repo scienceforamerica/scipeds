@@ -101,6 +101,7 @@ download-raw:
 process:
 	python pipeline/completions.py
 	python pipeline/institutions.py
+	python pipeline/fall_enrollment.py
 	python pipeline/db.py write-db --overwrite
 
 

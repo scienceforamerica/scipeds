@@ -193,6 +193,7 @@ def institution_characteristics(
     verbose: bool = True,
 ):
     """CLI Entrypoint for processing IPEDS institution characteristics"""
+    
     reader = IPEDSInstitutionCharacteristicsReader()
     year_dirs = sorted([d for d in metadata_dir.iterdir() if d.is_dir()])
     dfs = []

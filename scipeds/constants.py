@@ -11,6 +11,7 @@ DB_NAME = f"scipeds_{VERSION_STR}.duckdb"
 COMPLETIONS_TABLE = "ipeds_completions_a"
 INSTITUTIONS_TABLE = "ipeds_directory_info"
 CIP_TABLE = "cip_info"
+ENROLLMENT_RESIDENCE_TABLE = "fall_enrollment_residence"
 
 # Start and end year for analysis
 START_YEAR = 1984

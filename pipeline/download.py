@@ -51,10 +51,24 @@ CROSSWALK_ZIP_FILENAMES = {
     ],
 }
 
+# Fall enrollment residence files
+# Most recent data is one year behind Completions
+ENROLLMENT_RESIDENCE_FILENAMES = {
+    year: f"{BASE_URL}/EF{year}C.zip" for year in range(constants.END_YEAR - 1, 2000, -1)
+}
+ENROLLMENT_RESIDENCE_FILENAMES.update(
+    {year: f"{BASE_URL}/EF{str(year)[-2:]}_C.zip" for year in [1998, 1996]}
+)
+ENROLLMENT_RESIDENCE_FILENAMES.update(
+    {year: f"{BASE_URL}/EF{year}_C.zip" for year in [1986, 1988, 1992, 1994]}
+)
+
+
 # Directories
 CROSSWALK_DIR = pipeline.settings.RAW_DATA_DIR / pipeline.settings.CROSSWALKS_DIRNAME
 INSTITUTION_CHARACTERISTICS_DIR = pipeline.settings.RAW_DATA_DIR / constants.INSTITUTIONS_TABLE
 COMPLETIONS_DIR = pipeline.settings.RAW_DATA_DIR / constants.COMPLETIONS_TABLE
+ENROLLMENT_RESIDENCE_DIR = pipeline.settings.RAW_DATA_DIR / constants.ENROLLMENT_RESIDENCE_TABLE
 
 
 def fetch_file(url: str, output_path: Path, verbose: bool = True):
@@ -99,6 +113,9 @@ def download_from_ipeds(
     institution_output_dir: Annotated[
         Path, typer.Option(help="Output directory for institution directory information")
     ] = INSTITUTION_CHARACTERISTICS_DIR,
+    enrollment_residence_output_dir: Annotated[
+        Path, typer.Option(help="Output directory for Fall Enrollment residence surveys")
+    ] = ENROLLMENT_RESIDENCE_DIR,
     survey_year: Annotated[
         Optional[int],
         typer.Option(
@@ -129,9 +146,15 @@ def download_from_ipeds(
         filename = INSTITUTION_METADATA_DATADICTS[survey_year]
         download_and_extract(filename, year_dir, verbose)
 
+        # Fall enrollment residence info
+        year_dir = enrollment_residence_output_dir / str(survey_year)
+        year_dir.mkdir(parents=True, exist_ok=True)
+        filename = ENROLLMENT_RESIDENCE_FILENAMES[survey_year]
+        download_and_extract(filename, year_dir, verbose)
+
         return 0
 
-    # Download survey completion data
+    # Download completions data
     for year, filename in tqdm(COMPLETION_ZIP_FILENAMES.items()):
         year_dir = survey_output_dir / str(year)
         year_dir.mkdir(parents=True, exist_ok=True)
@@ -151,15 +174,21 @@ def download_from_ipeds(
         for url in urls:
             download_and_extract(url, range_dir, verbose)
 
-    # Download metadata
+    # Download institution metadata
     for year, filename in tqdm(INSTITUTION_METADATA_FILENAMES.items()):
         year_dir = institution_output_dir / str(year)
         year_dir.mkdir(parents=True, exist_ok=True)
         download_and_extract(filename, year_dir, verbose)
 
-    # Download metadata data dictionaries
+    # Download institution metadata data dictionaries
     for year, filename in tqdm(INSTITUTION_METADATA_DATADICTS.items()):
         year_dir = institution_output_dir / str(year)
+        year_dir.mkdir(parents=True, exist_ok=True)
+        download_and_extract(filename, year_dir, verbose)
+
+    # Download fall enrollment residence data
+    for year, filename in tqdm(ENROLLMENT_RESIDENCE_FILENAMES.items()):
+        year_dir = enrollment_residence_output_dir / str(year)
         year_dir.mkdir(parents=True, exist_ok=True)
         download_and_extract(filename, year_dir, verbose)
 
