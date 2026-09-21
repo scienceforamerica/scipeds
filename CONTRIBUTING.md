@@ -84,10 +84,17 @@ To add a new data source, please follow these instructions so the maintainers ca
 
 IPEDS releases new data yearly. Package maintainers can follow these steps to update the data:
 
-1. Download the data from IPEDS and upload it to SfA's Google Cloud `scipeds-data` bucket in the respective folder. Make sure to grab both the new year of data as well as the previous year's revised data.
-1. Update the pipeline code that downloads the data. Make sure it uses the new year, and that both downloading directly from IPEDS (`make download-raw-from-ipeds`) and from Science for America's cloud storage (`make download-raw`) work.
+1. Check where IPEDS is actually serving the files. They are published at more than one URL, and which years live where changes over time. `pipeline/download.py` keeps this in `COMPLETE_DATA_FILES_URL_YEARS`: the years fetched from `COMPLETE_DATA_FILES_URL`, with everything else coming from `DATACENTER_URL`. Verify it rather than assuming last year's mapping still holds — downloading a recent year from the wrong URL gets you the provisional file instead of the revised one, with no error.
+1. Update the pipeline code that downloads the data: bump `END_YEAR` in `scipeds/constants.py` and update `COMPLETE_DATA_FILES_URL_YEARS`. Make sure both downloading directly from IPEDS (`make download-raw-from-ipeds`) and from Science for America's cloud storage (`make download-raw`) work.
+1. Download the new year of data *and* re-download the previous year, which is when IPEDS publishes its revised (`_rv`) file. Clear the year directories first — the downloader skips files that already exist, so stale copies stick around silently.
+1. Look at the raw files before processing them. Most years IPEDS changes something small that doesn't raise an error: in 2024 they re-cased the data dictionary sheet names and added a BOM to the CSV headers. Check the data dictionary sheet and column names, the CSV headers, the award level codes, and whether the previous year's `_rv` file is actually there.
 1. Process the data into the duckdb file (`make process`).
-1. Do a bit of sanity-checking on the new duckdb file to make sure you don't have unexpected new or missing columns in the metadata, and that the total number of students seems okay.
+1. Review what changed (`make review-changes`). This compares the newly-built database against the last release and writes an HTML report flagging new or missing metadata columns, newly-unclassified CIP codes, unexpected changes to previously-released years, and whether the totals look reasonable. Items marked NEEDS REVIEW are normal — they need a person to look and decide, not a fix.
+1. Upload the new and revised raw data to SfA's Google Cloud `scipeds-data` bucket in the respective folder. The release workflow builds from the bucket, not from IPEDS, so anything missing there won't make it into the release.
+
+!!! tip
+
+    If you use Claude Code, the `update-ipeds-data` skill in `.claude/skills/` walks through this whole process, including the checks to run at each step.
 
 !!! note
 

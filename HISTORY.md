@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+### Added
+
+- New 2025 data and revised 2024 data for Completions and Institution Directory metadata (Issue [#88](https://github.com/scienceforamerica/scipeds/issues/88))
+- `update-ipeds-data` Claude Code skill (`.claude/skills/`) that walks through adding a new year of IPEDS data
+- `make review-changes` (`pipeline/review_changes.py`), a maintainer tool that compares a newly-built database against the last release and reports what changed
+- `make download-raw-from-ipeds`, which CONTRIBUTING.md already referenced but the Makefile did not define
+
+### Changed
+
+- Data files for recent years are downloaded from the IPEDS `complete-data-files` URL, which is the only place 2025 and the revised 2024 data are published; earlier years still come from `datacenter/data`
+- Revised (`_rv`) raw data files are now matched case-insensitively and sorted deterministically, so a case-sensitive filesystem can no longer fall back to the provisional file
+
 ## [v0.0.8] (2025-10-06)
 
 ### Changed
