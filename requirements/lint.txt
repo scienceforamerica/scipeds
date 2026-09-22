@@ -1,6 +1,7 @@
 -e .
 
 -r ../pipeline/requirements.txt
+-r review.txt
 
 mypy
 pandas-stubs
