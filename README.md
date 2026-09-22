@@ -1,7 +1,7 @@
 # ![](https://raw.githubusercontent.com/scienceforamerica/scipeds/main/docs/docs/scipeds.png)
 
 > [!NOTE]
-> **2024 data**: As of `v0.0.8`, `scipeds` now includes 2024 data!
+> **2025 data**: As of `v0.0.9`, `scipeds` now includes 2025 data!
 
 A Python package for working with [IPEDS](https://nces.ed.gov/ipeds/) [data](https://nces.ed.gov/ipeds/datacenter/DataFiles.aspx).
 
@@ -111,8 +111,8 @@ Full `scipeds` documentation can be found at [this link](https://docs.scipeds.or
 
 `scipeds` currently supports the following datasets / survey components:
 
-- IPEDS Completions by program (6-digit CIP code), award level, race/ethnicity, and gender from 1984-2023
-- IPEDS Institutional Characteristics Directory Information from 2011-2023
+- IPEDS Completions by program (6-digit CIP code), award level, race/ethnicity, and gender from 1984-2025
+- IPEDS Institutional Characteristics Directory Information from 2011-2025
 
 #### Completions data preprocessing
 

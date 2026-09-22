@@ -96,12 +96,22 @@ docs-serve:
 download-raw:
 	python pipeline/download.py download-from-bucket
 
+## Download raw data files directly from IPEDS
+.PHONY: download-raw-from-ipeds
+download-raw-from-ipeds:
+	python pipeline/download.py download-from-ipeds
+
 ## Process all raw files, write interims, and create duckdb database
 .PHONY: process
 process:
 	python pipeline/completions.py
 	python pipeline/institutions.py
 	python pipeline/db.py write-db --overwrite
+
+## Review what changed between the last release and a newly-built database
+.PHONY: review-changes
+review-changes:
+	python pipeline/review_changes.py
 
 
 #################################################################################

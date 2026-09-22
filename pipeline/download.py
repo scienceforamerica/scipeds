@@ -15,31 +15,50 @@ from scipeds import constants
 
 app = typer.Typer()
 
+DATACENTER_URL = "https://nces.ed.gov/ipeds/datacenter/data"
+COMPLETE_DATA_FILES_URL = "https://nces.ed.gov/ipeds/complete-data-files"
+
+# Years served by COMPLETE_DATA_FILES_URL rather than DATACENTER_URL. Re-check this when
+# adding a new year -- see the "Updating data" section of CONTRIBUTING.md.
+COMPLETE_DATA_FILES_URL_YEARS = {2024, 2025}
+
 # IPEDS Completions files
-BASE_URL = "https://nces.ed.gov/ipeds/datacenter/data"
 COMPLETION_ZIP_FILENAMES = {
-    year: f"{BASE_URL}/C{year}_A.zip" for year in range(constants.END_YEAR, 1999, -1)
+    year: f"{DATACENTER_URL}/C{year}_A.zip" for year in range(constants.END_YEAR, 1999, -1)
 }
 COMPLETION_ZIP_FILENAMES.update(
     {
-        year: f"{BASE_URL}/C{str(year - 1)[-2:]}{str(year)[-2:]}_A.zip"
+        year: f"{DATACENTER_URL}/C{str(year - 1)[-2:]}{str(year)[-2:]}_A.zip"
         for year in range(1999, 1994, -1)
     }
 )
 
 COMPLETION_ZIP_FILENAMES.update(
-    {year: f"{BASE_URL}/C{year}_CIP.zip" for year in range(1994, 1983, -1)}
+    {year: f"{DATACENTER_URL}/C{year}_CIP.zip" for year in range(1994, 1983, -1)}
 )
 
-COMPLETION_ZIP_FILENAMES[1990] = f"{BASE_URL}/C8990CIP.zip"
+COMPLETION_ZIP_FILENAMES[1990] = f"{DATACENTER_URL}/C8990CIP.zip"
+
+COMPLETION_ZIP_FILENAMES.update(
+    {year: f"{COMPLETE_DATA_FILES_URL}/C{year}_A.zip" for year in COMPLETE_DATA_FILES_URL_YEARS}
+)
 
 # Institution metadata files
 INSTITUTION_METADATA_FILENAMES = {
-    year: f"{BASE_URL}/HD{year}.zip" for year in range(constants.END_YEAR, 2010, -1)
+    year: f"{DATACENTER_URL}/HD{year}.zip" for year in range(constants.END_YEAR, 2010, -1)
 }
+INSTITUTION_METADATA_FILENAMES.update(
+    {year: f"{COMPLETE_DATA_FILES_URL}/HD{year}.zip" for year in COMPLETE_DATA_FILES_URL_YEARS}
+)
 INSTITUTION_METADATA_DATADICTS = {
-    year: f"{BASE_URL}/HD{year}_Dict.zip" for year in range(constants.END_YEAR, 2010, -1)
+    year: f"{DATACENTER_URL}/HD{year}_Dict.zip" for year in range(constants.END_YEAR, 2010, -1)
 }
+INSTITUTION_METADATA_DATADICTS.update(
+    {
+        year: f"{COMPLETE_DATA_FILES_URL}/HD{year}_Dict.zip"
+        for year in COMPLETE_DATA_FILES_URL_YEARS
+    }
+)
 
 # CIP Code Crosswalk files
 CROSSWALK_ZIP_FILENAMES = {

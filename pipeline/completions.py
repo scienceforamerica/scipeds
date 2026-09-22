@@ -115,12 +115,15 @@ class IPEDSCompletionsReader:
 
     def _read_raw_data_files(self, folder: Path, verbose: bool = True) -> pd.DataFrame:
         """Find and read the raw data file from"""
-        # Load raw data, using revised data if it exists
-        csv_files = list(folder.glob("*rv.csv"))
+        # Load raw data, using revised data if it exists. IPEDS is inconsistent about
+        # the case of the "_rv" suffix, so match case-insensitively and sort so the
+        # choice doesn't depend on directory order.
+        all_csv_files = sorted(folder.glob("*.csv"))
+        csv_files = [f for f in all_csv_files if f.stem.lower().endswith("_rv")]
         if len(csv_files) == 0:
             if verbose:
                 logger.info("Revised data not found, attempting to use raw data.")
-            csv_files = list(folder.glob("*.csv"))
+            csv_files = all_csv_files
             if len(csv_files) == 0:
                 raise FileNotFoundError(f"Could not find any raw data CSVs in {folder}")
         raw_file = csv_files[0]
@@ -129,7 +132,8 @@ class IPEDSCompletionsReader:
         raw_df = pd.read_csv(raw_file, dtype=str)
         if verbose:
             logger.info(
-                f"Read raw data with {raw_df.shape[0]:,} rows and {raw_df.shape[1]:,} cols"
+                f"Read raw data from {raw_file.name} with "
+                f"{raw_df.shape[0]:,} rows and {raw_df.shape[1]:,} cols"
             )
         return raw_df
 

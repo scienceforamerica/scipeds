@@ -84,10 +84,14 @@ To add a new data source, please follow these instructions so the maintainers ca
 
 IPEDS releases new data yearly. Package maintainers can follow these steps to update the data:
 
-1. Download the data from IPEDS and upload it to SfA's Google Cloud `scipeds-data` bucket in the respective folder. Make sure to grab both the new year of data as well as the previous year's revised data.
-1. Update the pipeline code that downloads the data. Make sure it uses the new year, and that both downloading directly from IPEDS (`make download-raw-from-ipeds`) and from Science for America's cloud storage (`make download-raw`) work.
-1. Process the data into the duckdb file (`make process`).
-1. Do a bit of sanity-checking on the new duckdb file to make sure you don't have unexpected new or missing columns in the metadata, and that the total number of students seems okay.
+1. Check the URL where IPEDS is actually serving the files, since this changed in 2026. `COMPLETE_DATA_FILES_URL_YEARS` in `pipeline/download.py` tracks the years fetched from the new URL.
+1. Update the pipeline code that downloads the data: bump `END_YEAR` in `scipeds/constants.py` and update `COMPLETE_DATA_FILES_URL_YEARS`. Make sure both downloading directly from IPEDS (`make download-raw-from-ipeds`) and from Science for America's cloud storage (`make download-raw`) work.
+1. Download the new year of data *and* the previous year's revised data.
+1. Process the data into the duckdb file (`make process`). If there are errors, look at the raw files because IPEDS may have changed something small (e.g. changing the case of the sheet names).
+1. Sanity check the changes by running `make review-changes` and reviewing the html output.
+1. Upload the new and revised raw data to SfA's Google Cloud `scipeds-data` bucket in the respective folder. The release workflow builds from the bucket, not from IPEDS, so anything missing there won't make it into the release.
+
+If you use Claude Code, the `update-ipeds-data` skill in `.claude/skills/` walks through this whole process.
 
 !!! note
 
