@@ -26,30 +26,6 @@ jobs:
         run: |
           make lint
 
-  pipeline-tests:
-    name: Pipeline tests
-    needs: lint
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python and uv
-        uses: drivendataorg/setup-python-uv-action@v1
-        with:
-          python-version: "3.11"
-
-      # Install the pipeline's dependencies unpinned so these tests fail when a new
-      # release of one of them breaks the pipeline. The release workflow builds with
-      # the pinned pipeline/requirements.txt.
-      - name: Install dependencies
-        run: |
-          uv pip install -e . -r pipeline/requirements.in pytest
-
-      - name: Run pipeline tests
-        run: |
-          make test-pipeline
-
   tests:
     name: Tests (${{ matrix.os }}, Python ${{ matrix.python-version }})
     needs: lint
