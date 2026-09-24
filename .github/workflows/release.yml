@@ -29,11 +29,11 @@ jobs:
 
       - name: Download raw data
         run: |
-          uv run make download-raw
+          uv run --no-sync make download-raw
 
       - name: Process raw data into duckdb file
         run: |
-          uv run make process
+          uv run --no-sync make process
 
       - name: Set environment variable for version
         run: |
