@@ -232,7 +232,7 @@ def institution_characteristics(
         )
 
     # Combine and fill null data with most recently available data
-    combined = pd.concat(dfs).sort_values("metadata_vintage")
+    combined = pd.concat(dfs, ignore_index=True).sort_values("metadata_vintage")
     combined.update(combined.groupby("unitid").ffill())
     most_recent = combined.groupby("unitid").tail(1).sort_values("unitid")
 
